@@ -17,6 +17,9 @@ async function startServer() {
   app.use("/api/cars", require("./routes/carRoutes"));
   app.use("/api/bookings", require("./routes/bookingRoutes"));
 
+  // Serve static files from uploads directory
+  app.use('/uploads', express.static('uploads'));
+
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

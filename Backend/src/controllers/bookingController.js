@@ -12,12 +12,21 @@ exports.getAllBookings = async (req, res) => {
 
 exports.createBooking = async (req, res) => {
     try {
-        const newBooking = req.body;
-        newBooking.status = "Pending";
-        newBooking.createdAt = new Date();
+        const bookingData = req.body;
 
-        const result = await Booking.collection().insertOne(newBooking);
-        res.status(201).json({ ...newBooking, _id: result.insertedId });
+        // Add file paths if they exist
+        if (req.files) {
+            if (req.files.licenseFront) bookingData.licenseFront = req.files.licenseFront[0].path;
+            if (req.files.licenseBack) bookingData.licenseBack = req.files.licenseBack[0].path;
+            if (req.files.nidFront) bookingData.nidFront = req.files.nidFront[0].path;
+            if (req.files.nidBack) bookingData.nidBack = req.files.nidBack[0].path;
+        }
+
+        bookingData.status = "Pending";
+        bookingData.createdAt = new Date();
+
+        const result = await Booking.collection().insertOne(bookingData);
+        res.status(201).json({ ...bookingData, _id: result.insertedId });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

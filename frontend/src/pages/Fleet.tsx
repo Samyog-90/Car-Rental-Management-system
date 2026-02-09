@@ -18,7 +18,7 @@ const FleetPage: React.FC = () => {
             id: 1,
             name: "Toyota Corolla",
             type: "Sedan",
-            image: "https://ccarprice.com/products/Toyota_Corolla_L_2022_1.jpg",
+            image: "https://imagecdnsa.zigwheels.ae/large/gallery/exterior/40/417/toyota-corolla-front-angle-low-view-931780.jpg",
             price: "Rs. 2000",
             priceType: "Daily Rate",
             automatic: true,
@@ -99,10 +99,9 @@ const FleetPage: React.FC = () => {
         });
     }, [vehicles, state?.recommendation]);
 
-    const handleBookNow = (carName: string) => {
-        alert(`Booking ${carName}...`);
+    const handleBookNow = (car: any) => {
+        navigate('/booking', { state: { car } });
     };
-
 
     const navigate = useNavigate();
 
@@ -270,7 +269,7 @@ const FleetPage: React.FC = () => {
 
                                 {/* Book Now Button */}
                                 <button
-                                    onClick={() => handleBookNow(vehicle.name)}
+                                    onClick={() => handleBookNow(vehicle)}
                                     className="w-full py-2.5 sm:py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white text-sm sm:text-base font-bold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
                                 >
                                     Book Now
@@ -281,7 +280,7 @@ const FleetPage: React.FC = () => {
                 </div>
             </main>
 
-            {/* Enhanced Footer */}
+
             <footer className="mt-20 bg-gray-900 text-white">
                 <div className="max-w-7xl mx-auto px-6 py-12">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">

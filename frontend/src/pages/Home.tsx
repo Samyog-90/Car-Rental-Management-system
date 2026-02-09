@@ -13,7 +13,7 @@ const Home: React.FC = () => {
     const [roadCondition, setRoadCondition] = useState('');
 
     const [vehicles] = useState([
-        { id: 1, name: "Toyota Corolla", price: "Rs. 2,000/day", image: "https://ccarprice.com/products/Toyota_Corolla_L_2022_1.jpg" },
+        { id: 1, name: "Toyota Corolla", price: "Rs. 2,000/day", image: "https://imagecdnsa.zigwheels.ae/large/gallery/exterior/40/417/toyota-corolla-front-angle-low-view-931780.jpg" },
         { id: 2, name: "Hyundai Creta", price: "Rs. 3,000/day", image: "https://ymimg1.b8cdn.com/resized/car_model/12271/logo/webp_mobile_listing_main_2023_Hyundai_Creta_Exterior_01.webp" },
         { id: 3, name: "Suzuki Swift", price: "Rs. 1,000/day", image: "https://media.umbraco.io/suzuki-gb/o0yoypmz/10816_suzuki_swift_501_r1.jpg" },
     ]);

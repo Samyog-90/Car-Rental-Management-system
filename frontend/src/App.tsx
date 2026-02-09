@@ -4,6 +4,8 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FleetPage from './pages/Fleet';
+import BookingPage from './pages/BookingPage';
+import HowItWorks from './pages/HowItWorks';
 
 // Admin imports (placeholders for now until file creation)
 import AdminLogin from './pages/admin/AdminLogin';
@@ -20,6 +22,8 @@ const App: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/fleet" element={<FleetPage />} />
+      <Route path="/booking" element={<BookingPage />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />
