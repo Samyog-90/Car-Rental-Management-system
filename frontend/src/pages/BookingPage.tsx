@@ -34,6 +34,8 @@ const BookingPage: React.FC = () => {
     const [cardExpiry, setCardExpiry] = useState('');
     const [cardCVC, setCardCVC] = useState('');
 
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'esewa'>('esewa');
+
     useEffect(() => {
         if (!car) {
             navigate('/fleet');
@@ -78,7 +80,7 @@ const BookingPage: React.FC = () => {
         }
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (isEsewa = false) => {
         setLoading(true);
         setError(null);
 
@@ -98,22 +100,28 @@ const BookingPage: React.FC = () => {
             if (nidFront) formData.append('nidFront', nidFront);
             if (nidBack) formData.append('nidBack', nidBack);
 
-            formData.append('paymentStatus', 'Completed');
-            formData.append('totalPrice', car?.price || '0');
+            formData.append('paymentStatus', isEsewa ? 'Pending' : 'Completed');
+            // Assuming price is "Rs. 2000" or similar, need numeric for eSewa
+            const numericPrice = parseFloat(String(car?.price).replace(/[^0-9.]/g, '')) || 0;
+            formData.append('totalPrice', String(numericPrice));
 
-            await axios.post('http://localhost:5000/api/bookings', formData, {
+            const response = await axios.post('http://localhost:5000/api/bookings', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+
+            if (isEsewa) {
+                return { bookingId: response.data._id, totalPrice: numericPrice };
+            }
 
             setStep(5);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to create booking.');
         } finally {
-            setLoading(false);
+            if (!isEsewa) setLoading(false);
         }
     };
 
-    const nextStep = () => {
+    const nextStep = async () => {
         // Validation Logic
         if (step === 1) {
             if (!startDate || !endDate || !location) {
@@ -134,12 +142,65 @@ const BookingPage: React.FC = () => {
             }
         }
         if (step === 4) {
-            if (!cardNumber || !cardExpiry || !cardCVC) {
-                setError('Please enter payment details.');
+            if (paymentMethod === 'card') {
+                if (!cardNumber || !cardExpiry || !cardCVC) {
+                    setError('Please enter payment details.');
+                    return;
+                }
+                handleSubmit(false);
+                return;
+            } else if (paymentMethod === 'esewa') {
+                // eSewa Flow
+                try {
+                    const result = await handleSubmit(true);
+                    if (result && result.bookingId) {
+                        // Get eSewa Config
+                        const configRes = await axios.post('http://localhost:5000/api/payment/esewa-config', {
+                            amount: result.totalPrice,
+                            transactionUuid: result.bookingId
+                        });
+
+                        const { signature, productCode, totalAmount, transactionUuid, successUrl, failureUrl } = configRes.data;
+
+                        // Create and submit form
+                        const form = document.createElement("form");
+                        form.setAttribute("method", "POST");
+                        form.setAttribute("action", "https://rc-epay.esewa.com.np/api/epay/main/v2/form");
+                        form.setAttribute("target", "_self");
+
+                        const params = {
+                            amount: totalAmount,
+                            tax_amount: 0,
+                            total_amount: totalAmount,
+                            transaction_uuid: transactionUuid,
+                            product_code: productCode,
+                            product_service_charge: 0,
+                            product_delivery_charge: 0,
+                            success_url: successUrl,
+                            failure_url: failureUrl,
+                            signed_field_names: "total_amount,transaction_uuid,product_code",
+                            signature: signature
+                        };
+
+                        for (const key in params) {
+                            const hiddenField = document.createElement("input");
+                            hiddenField.setAttribute("type", "hidden");
+                            hiddenField.setAttribute("name", key);
+                            // @ts-ignore
+                            hiddenField.setAttribute("value", params[key]);
+                            form.appendChild(hiddenField);
+                        }
+
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                } catch (e: any) {
+                    console.error(e);
+                    setError("Failed to initiate eSewa payment");
+                    setLoading(false);
+                }
                 return;
             }
-            handleSubmit();
-            return;
         }
 
         setError(null);
@@ -417,40 +478,67 @@ const BookingPage: React.FC = () => {
                                         <span className="text-4xl font-bold text-gray-900">{car.price}</span>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Card Number</label>
-                                            <input
-                                                type="text"
-                                                placeholder="0000 0000 0000 0000"
-                                                value={cardNumber}
-                                                onChange={(e) => setCardNumber(e.target.value)}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                            />
+                                    {/* Payment Method Selector */}
+                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <div
+                                            onClick={() => setPaymentMethod('esewa')}
+                                            className={`cursor-pointer p-4 border rounded-xl flex items-center justify-center gap-2 transition-all ${paymentMethod === 'esewa' ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-xs">e</div>
+                                            <span className="font-bold text-gray-800">eSewa</span>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Expiry Date</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="MM/YY"
-                                                    value={cardExpiry}
-                                                    onChange={(e) => setCardExpiry(e.target.value)}
-                                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">CVC</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="123"
-                                                    value={cardCVC}
-                                                    onChange={(e) => setCardCVC(e.target.value)}
-                                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                                />
-                                            </div>
+                                        <div
+                                            onClick={() => setPaymentMethod('card')}
+                                            className={`cursor-pointer p-4 border rounded-xl flex items-center justify-center gap-2 transition-all ${paymentMethod === 'card' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}`}
+                                        >
+                                            <CreditCard className="w-5 h-5 text-gray-600" />
+                                            <span className="font-bold text-gray-800">Card</span>
                                         </div>
                                     </div>
+
+                                    {paymentMethod === 'esewa' ? (
+                                        <div className="text-center py-6">
+                                            <p className="text-gray-600 mb-4">You will be redirected to eSewa to complete your payment securely.</p>
+                                            <div className="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
+                                                Fast & Secure Connection
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Card Number</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="0000 0000 0000 0000"
+                                                    value={cardNumber}
+                                                    onChange={(e) => setCardNumber(e.target.value)}
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Expiry Date</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="MM/YY"
+                                                        value={cardExpiry}
+                                                        onChange={(e) => setCardExpiry(e.target.value)}
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">CVC</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="123"
+                                                        value={cardCVC}
+                                                        onChange={(e) => setCardCVC(e.target.value)}
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -495,6 +583,7 @@ const BookingPage: React.FC = () => {
                 )}
             </div>
         </div>
+
     );
 };
 

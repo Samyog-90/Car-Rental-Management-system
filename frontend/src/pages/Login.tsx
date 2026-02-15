@@ -9,7 +9,9 @@ const DriveFlowLogin: React.FC = () => {
     const navigate = useNavigate();
 
     const handleSubmit = async () => {
+        setError('');
         try {
+            // 1. Try User Login
             const response = await axios.post('http://localhost:5000/api/users/login', {
                 email,
                 password
@@ -18,11 +20,32 @@ const DriveFlowLogin: React.FC = () => {
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
-                navigate('/');
+                navigate('/home');
+                return;
             }
-        } catch (err: any) {
-            console.error(err);
-            setError(err.response?.data?.message || 'Login failed');
+        } catch (userErr: any) {
+            // 2. If User Login fails, Try Admin Login
+            console.log("User login failed, trying admin...", userErr.response?.data?.message);
+
+            try {
+                const adminResponse = await axios.post('http://localhost:5000/api/admin/login', {
+                    email,
+                    password
+                });
+
+                if (adminResponse.data.token) {
+                    localStorage.setItem('adminToken', adminResponse.data.token);
+                    localStorage.setItem('adminUser', JSON.stringify(adminResponse.data.admin));
+                    navigate('/admin');
+                    return;
+                }
+            } catch (adminErr: any) {
+                console.error("Admin login failed", adminErr);
+                // 3. If both fail, show error
+                // Prefer the error message from the first attempt if it's "Invalid credentials" type, 
+                // or just a generic "Invalid email or password"
+                setError('Invalid email or password');
+            }
         }
     };
 

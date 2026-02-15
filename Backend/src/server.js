@@ -16,6 +16,7 @@ async function startServer() {
   app.use("/api/admin", require("./routes/admin.routes"));
   app.use("/api/cars", require("./routes/carRoutes"));
   app.use("/api/bookings", require("./routes/bookingRoutes"));
+  app.use("/api/payment", require("./routes/paymentRoutes"));
 
   // Serve static files from uploads directory
   app.use('/uploads', express.static('uploads'));

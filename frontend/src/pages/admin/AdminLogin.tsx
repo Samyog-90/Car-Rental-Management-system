@@ -17,8 +17,12 @@ const AdminLogin: React.FC = () => {
                 password
             });
 
+            console.log("Login response:", response.data);
+
             if (response.data.token) {
                 localStorage.setItem('adminToken', response.data.token);
+                // Also store user info if needed
+                localStorage.setItem('adminUser', JSON.stringify(response.data.admin));
                 navigate('/admin');
             }
         } catch (err: any) {

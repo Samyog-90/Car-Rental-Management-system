@@ -1,8 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const { adminLogin, adminRegister } = require("../controllers/adminController");
+const { adminLogin, adminRegister, getDashboardStats, getUsers, deleteUser } = require("../controllers/adminController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 router.post("/login", adminLogin);
 router.post("/register", adminRegister);
+
+router.get("/stats", authMiddleware, getDashboardStats);
+router.get("/users", authMiddleware, getUsers);
+router.delete("/users/:id", authMiddleware, deleteUser);
 
 module.exports = router;

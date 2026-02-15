@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Star, Users, Fuel, Settings, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, CheckCircle } from 'lucide-react';
 
@@ -13,80 +13,21 @@ const FleetPage: React.FC = () => {
         recommendation?: string;
     } | null;
 
-    const [vehicles] = useState([
-        {
-            id: 1,
-            name: "Toyota Corolla",
-            type: "Sedan",
-            image: "https://imagecdnsa.zigwheels.ae/large/gallery/exterior/40/417/toyota-corolla-front-angle-low-view-931780.jpg",
-            price: "Rs. 2000",
-            priceType: "Daily Rate",
-            automatic: true,
-            seats: 5,
-            petrol: "Petrol",
-            rating: 4.8
-        },
-        {
-            id: 2,
-            name: "Honda Civic",
-            type: "Sedan",
-            image: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Honda_Civic_e-HEV_Sport_%28XI%29_%E2%80%93_f_30062024.jpg",
-            price: "Rs. 2500",
-            priceType: "Daily Rate",
-            automatic: true,
-            seats: 5,
-            petrol: "Petrol",
-            rating: 4.9
-        },
-        {
-            id: 3,
-            name: "Hyundai Creta",
-            type: "SUV",
-            image: "https://ymimg1.b8cdn.com/resized/car_model/12271/logo/webp_mobile_listing_main_2023_Hyundai_Creta_Exterior_01.webp",
-            price: "Rs. 3000",
-            priceType: "Daily Rate",
-            automatic: true,
-            seats: 5,
-            petrol: "Diesel",
-            rating: 4.7
-        },
-        {
-            id: 4,
-            name: "Suzuki Swift",
-            type: "Hatchback",
-            image: "https://media.umbraco.io/suzuki-gb/o0yoypmz/10816_suzuki_swift_501_r1.jpg",
-            price: "Rs. 1000",
-            priceType: "Daily Rate",
-            automatic: true,
-            seats: 5,
-            petrol: "Petrol",
-            rating: 4.6
-        },
-        {
-            id: 5,
-            name: "Mahindra Thar",
-            type: "SUV",
-            image: "https://upload.wikimedia.org/wikipedia/commons/1/13/Mahindra_Thar_Photoshoot_At_Perupalem_Beach_%28West_Godavari_District%2CAP%2CIndia_%29_Djdavid.jpg",
-            price: "Rs. 1,500",
-            priceType: "Daily Rate",
-            automatic: false,
-            seats: 4,
-            petrol: "Diesel",
-            rating: 4.9
-        },
-        {
-            id: 6,
-            name: "Kia Seltos",
-            type: "SUV",
-            image: "https://upload.wikimedia.org/wikipedia/commons/6/6c/Kia_Seltos_SP2_PE_Snow_White_Pearl_%2817%29_%28cropped%29.jpg",
-            price: "Rs. 1,200",
-            priceType: "Daily Rate",
-            automatic: true,
-            seats: 5,
-            petrol: "Petrol",
-            rating: 4.8
-        }
-    ]);
+    const [vehicles, setVehicles] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchCars = async () => {
+            try {
+
+                const response = await fetch('http://localhost:5000/api/cars');
+                const data = await response.json();
+                setVehicles(data);
+            } catch (error) {
+                console.error("Failed to fetch fleet:", error);
+            }
+        };
+        fetchCars();
+    }, []);
 
     const displayVehicles = useMemo(() => {
         if (!state?.recommendation) return vehicles;

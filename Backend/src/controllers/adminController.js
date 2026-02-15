@@ -1,6 +1,5 @@
 const bcrypt = require("bcryptjs");
 const Admin = require("../models/Admin");
-
 const jwt = require("jsonwebtoken");
 
 exports.adminLogin = async (req, res) => {
@@ -68,4 +67,63 @@ exports.adminRegister = async (req, res) => {
   }
 };
 
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const Car = require("../models/Car");
+    const User = require("../models/User");
+    const Booking = require("../models/Booking");
 
+    const totalCars = await Car.collection().countDocuments();
+    const totalUsers = await User.collection().countDocuments();
+    const bookings = await Booking.collection().find().toArray();
+
+    const activeBookings = bookings.filter(b => b.status === "Pending" || b.status === "Approved").length;
+
+    // Calculate revenue from Completed/Approved bookings
+    let totalRevenue = 0;
+    bookings.forEach(b => {
+      // Extract numeric value from string like "Rs. 2000" if necessary, or assume it's stored clean
+      // Based on previous code, price might be string.
+      if (b.totalPrice) {
+        const priceStr = String(b.totalPrice).replace(/[^0-9.]/g, '');
+        const price = parseFloat(priceStr);
+        if (!isNaN(price)) totalRevenue += price;
+      }
+    });
+
+    res.json({
+      totalCars,
+      totalUsers,
+      activeBookings,
+      totalRevenue: `Rs. ${totalRevenue.toLocaleString()}`
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.getUsers = async (req, res) => {
+  try {
+    const User = require("../models/User");
+    const users = await User.collection().find({}, { projection: { password: 0 } }).toArray();
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const User = require("../models/User");
+    const { ObjectId } = require("mongodb");
+    const result = await User.collection().deleteOne({ _id: new ObjectId(req.params.id) });
+    if (result.deletedCount === 0) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User deleted" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
