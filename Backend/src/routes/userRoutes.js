@@ -1,10 +1,16 @@
 const express = require("express");
 const router = express.Router();
 const { connectDB } = require("../config/db");
-const { register, login } = require("../controllers/userController");
+const authMiddleware = require("../middlewares/authMiddleware");
+const { register, login, getProfile, updateProfile, changePassword } = require("../controllers/userController");
 
 router.post("/register", register);
 router.post("/login", login);
+
+// Profile Routes
+router.get("/profile", authMiddleware, getProfile);
+router.put("/profile", authMiddleware, updateProfile);
+router.put("/change-password", authMiddleware, changePassword);
 
 // GET all users
 router.get("/", async (req, res) => {

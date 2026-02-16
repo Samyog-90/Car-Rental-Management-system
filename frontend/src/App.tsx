@@ -6,8 +6,11 @@ import Register from './pages/Register';
 import FleetPage from './pages/Fleet';
 import BookingPage from './pages/BookingPage';
 import HowItWorks from './pages/HowItWorks';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailure from './pages/PaymentFailure';
+import UserProfile from './pages/UserProfile';
 
 // Admin imports (placeholders for now until file creation)
 import AdminLogin from './pages/admin/AdminLogin';
@@ -26,6 +29,9 @@ const App: React.FC = () => {
       <Route path="/fleet" element={<FleetPage />} />
       <Route path="/booking" element={<BookingPage />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/profile" element={<UserProfile />} />
       <Route path="/payment/success" element={<PaymentSuccess />} />
       <Route path="/payment/failure" element={<PaymentFailure />} />
 

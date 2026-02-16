@@ -3,6 +3,8 @@ import { ChevronRight, Car, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
 import MapComponent from '../components/MapComponent';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -58,54 +60,7 @@ const Home: React.FC = () => {
     return (
         <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
             {/* Navigation */}
-            <nav className="bg-white shadow-md">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-8">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xl font-bold">D</span>
-                                </div>
-                                <span className="text-xl font-bold text-gray-900">DriveFlow</span>
-                            </div>
-                            <div className="hidden md:flex gap-6">
-                                <button className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
-                                    Home
-                                </button>
-                                <button
-                                    onClick={() => navigate('/fleet')}
-                                    className="text-gray-600 hover:text-blue-600 transition-colors"
-                                >
-                                    Our fleet
-                                </button>
-                                <button className="text-gray-600 hover:text-blue-600 transition-colors">
-                                    About
-                                </button>
-                                <button className="text-gray-600 hover:text-blue-600 transition-colors">
-                                    Blog
-                                </button>
-                                <button className="text-gray-600 hover:text-blue-600 transition-colors">
-                                    Contact us
-                                </button>
-                            </div>
-                        </div>
-                        <div className="gap-2 flex">
-                            <button
-                                onClick={() => navigate('/login')}
-                                className="px-6 py-2 bg-white border-2 border-gray-900 rounded-lg font-semibold hover:bg-gray-900 hover:text-white transition-colors"
-                            >
-                                Sign in
-                            </button>
-                            <button
-                                onClick={() => navigate('/admin/login')}
-                                className="px-6 py-2 bg-gray-900 text-white border-2 border-gray-900 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors"
-                            >
-                                Admin
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            <Navbar />
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-6 py-12">
@@ -283,11 +238,7 @@ const Home: React.FC = () => {
             </main>
 
             {/* Footer */}
-            <footer className="mt-16 bg-gray-900 text-white py-8">
-                <div className="max-w-7xl mx-auto px-6 text-center">
-                    <p className="text-gray-400">© 2025 DriveFlow - Premium Mobility Solutions. All rights reserved.</p>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 };

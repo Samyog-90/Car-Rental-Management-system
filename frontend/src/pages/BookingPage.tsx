@@ -47,7 +47,6 @@ const BookingPage: React.FC = () => {
         setLicenseStatus('verifying');
         setError(null);
         try {
-            // Mock verification for now or use the endpoint if it supports simple validation
             const response = await axios.get(`http://localhost:5000/api/gov/license/check/${licenseNumber}`);
             if (response.data.valid) {
                 setLicenseStatus('valid');
@@ -55,20 +54,28 @@ const BookingPage: React.FC = () => {
                 setLicenseStatus('invalid');
                 setError('License is invalid or expired.');
             }
-        } catch (err) {
-            // fallback for demo
-            setLicenseStatus('valid');
-            // setLicenseStatus('invalid');
-            // setError('Failed to verify license. Please check the number.');
+        } catch (err: any) {
+            setLicenseStatus('invalid');
+            setError(err.response?.data?.message || 'Failed to verify license. Make sure records exist.');
         }
     };
 
-    const handleVerifyNID = () => {
+    const handleVerifyNID = async () => {
         if (!nidNumber) return;
         setNidStatus('verifying');
-        setTimeout(() => {
-            setNidStatus('valid');
-        }, 1500);
+        setError(null);
+        try {
+            const response = await axios.get(`http://localhost:5000/api/gov/nid/check/${nidNumber}`);
+            if (response.data.valid) {
+                setNidStatus('valid');
+            } else {
+                setNidStatus('invalid');
+                setError('National ID is invalid or not found.');
+            }
+        } catch (err: any) {
+            setNidStatus('invalid');
+            setError(err.response?.data?.message || 'Failed to verify National ID. Make sure records exist.');
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'licenseFront' | 'licenseBack' | 'nidFront' | 'nidBack') => {
