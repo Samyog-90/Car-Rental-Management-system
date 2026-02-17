@@ -12,23 +12,26 @@ exports.getAllBookings = async (req, res) => {
 
 exports.createBooking = async (req, res) => {
     try {
-        const bookingData = req.body;
+        const bookingData = { ...req.body };
 
         // Add file paths if they exist
         if (req.files) {
-            if (req.files.licenseFront) bookingData.licenseFront = req.files.licenseFront[0].path;
-            if (req.files.licenseBack) bookingData.licenseBack = req.files.licenseBack[0].path;
-            if (req.files.nidFront) bookingData.nidFront = req.files.nidFront[0].path;
-            if (req.files.nidBack) bookingData.nidBack = req.files.nidBack[0].path;
+            if (req.files.licenseFront?.[0]) bookingData.licenseFront = req.files.licenseFront[0].path;
+            if (req.files.licenseBack?.[0]) bookingData.licenseBack = req.files.licenseBack[0].path;
+            if (req.files.nidFront?.[0]) bookingData.nidFront = req.files.nidFront[0].path;
+            if (req.files.nidBack?.[0]) bookingData.nidBack = req.files.nidBack[0].path;
         }
 
         bookingData.status = "Pending";
         bookingData.createdAt = new Date();
 
+        console.log("Creating booking with data:", bookingData);
         const result = await Booking.collection().insertOne(bookingData);
+        console.log("Booking created successfully:", result.insertedId);
         res.status(201).json({ ...bookingData, _id: result.insertedId });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        console.error("Booking Creation Error:", err);
+        res.status(500).json({ message: "Internal Server Error: " + err.message });
     }
 };
 

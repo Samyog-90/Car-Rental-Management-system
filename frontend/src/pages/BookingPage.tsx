@@ -32,7 +32,6 @@ const BookingPage: React.FC = () => {
     // Payment (Mock)
     const [cardNumber, setCardNumber] = useState('');
     const [cardExpiry, setCardExpiry] = useState('');
-    const [cardCVC, setCardCVC] = useState('');
 
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'esewa'>('esewa');
 
@@ -93,7 +92,11 @@ const BookingPage: React.FC = () => {
 
         try {
             const formData = new FormData();
-            formData.append('carId', car?.id.toString() || '');
+            const bookingCarId = car?._id || car?.id;
+            if (!bookingCarId) {
+                throw new Error("Car identification missing. Please try selecting a car again.");
+            }
+            formData.append('carId', bookingCarId);
             formData.append('carName', car?.name || '');
             formData.append('startDate', startDate);
             formData.append('endDate', endDate);
@@ -107,13 +110,22 @@ const BookingPage: React.FC = () => {
             if (nidFront) formData.append('nidFront', nidFront);
             if (nidBack) formData.append('nidBack', nidBack);
 
+            formData.append('paymentMethod', paymentMethod);
+            if (paymentMethod === 'card') {
+                formData.append('cardNumber', cardNumber);
+                formData.append('cardExpiry', cardExpiry);
+            }
+
             formData.append('paymentStatus', isEsewa ? 'Pending' : 'Completed');
             // Assuming price is "Rs. 2000" or similar, need numeric for eSewa
             const numericPrice = parseFloat(String(car?.price).replace(/[^0-9.]/g, '')) || 0;
             formData.append('totalPrice', String(numericPrice));
 
             const response = await axios.post('http://localhost:5000/api/bookings', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
             });
 
             if (isEsewa) {
@@ -122,7 +134,9 @@ const BookingPage: React.FC = () => {
 
             setStep(5);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to create booking.');
+            const errorMsg = err.response?.data?.message || err.message || 'Failed to create booking.';
+            setError(errorMsg);
+            console.error("Booking Error:", err);
         } finally {
             if (!isEsewa) setLoading(false);
         }
@@ -150,7 +164,7 @@ const BookingPage: React.FC = () => {
         }
         if (step === 4) {
             if (paymentMethod === 'card') {
-                if (!cardNumber || !cardExpiry || !cardCVC) {
+                if (!cardNumber || !cardExpiry) {
                     setError('Please enter payment details.');
                     return;
                 }
@@ -516,30 +530,20 @@ const BookingPage: React.FC = () => {
                                                 <label className="block text-sm font-bold text-gray-700 mb-2">Card Number</label>
                                                 <input
                                                     type="text"
-                                                    placeholder="0000 0000 0000 0000"
+                                                    placeholder="Enter any random number (Test Mode)"
                                                     value={cardNumber}
                                                     onChange={(e) => setCardNumber(e.target.value)}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                                 />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-6">
+                                            <div className="grid grid-cols-1 gap-6">
                                                 <div>
                                                     <label className="block text-sm font-bold text-gray-700 mb-2">Expiry Date</label>
                                                     <input
                                                         type="text"
-                                                        placeholder="MM/YY"
+                                                        placeholder="DD-MM-YYYY (Any future date)"
                                                         value={cardExpiry}
                                                         onChange={(e) => setCardExpiry(e.target.value)}
-                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">CVC</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="123"
-                                                        value={cardCVC}
-                                                        onChange={(e) => setCardCVC(e.target.value)}
                                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                                     />
                                                 </div>
