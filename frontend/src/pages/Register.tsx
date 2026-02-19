@@ -39,6 +39,14 @@ const DriveFlowSignUp: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleForgot = () => {
+    alert('Redirecting to password recovery...');
+  };
+
+  const handleSignIn = () => {
+    navigate('/');
+  };
+
   const handleSubmit = async () => {
     if (validateForm()) {
       try {
@@ -48,22 +56,14 @@ const DriveFlowSignUp: React.FC = () => {
           password
         });
 
-        if (response.status === 201) {
+        if (response.status === 201 || response.status === 200) {
           alert('Account created successfully! Please login.');
-          navigate('/login');
+          navigate('/');
         }
       } catch (err: any) {
         setErrors({ ...errors, api: err.response?.data?.message || 'Registration failed' });
       }
     }
-  };
-
-  const handleForgot = () => {
-    alert('Redirecting to password recovery...');
-  };
-
-  const handleSignIn = () => {
-    alert('Redirecting to sign in page...');
   };
 
   return (

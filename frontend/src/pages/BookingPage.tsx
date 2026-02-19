@@ -16,15 +16,18 @@ const BookingPage: React.FC = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [location, setLocation] = useState('');
+    const [rentalType, setRentalType] = useState<'self' | 'driver'>('self');
 
     // License
     const [licenseNumber, setLicenseNumber] = useState('');
+    const [licenseName, setLicenseName] = useState('');
     const [licenseFront, setLicenseFront] = useState<File | null>(null);
     const [licenseBack, setLicenseBack] = useState<File | null>(null);
     const [licenseStatus, setLicenseStatus] = useState<'unverified' | 'verifying' | 'valid' | 'invalid'>('unverified');
 
     // National ID
     const [nidNumber, setNidNumber] = useState('');
+    const [nidName, setNidName] = useState('');
     const [nidFront, setNidFront] = useState<File | null>(null);
     const [nidBack, setNidBack] = useState<File | null>(null);
     const [nidStatus, setNidStatus] = useState<'unverified' | 'verifying' | 'valid' | 'invalid'>('unverified');
@@ -32,6 +35,9 @@ const BookingPage: React.FC = () => {
     // Payment (Mock)
     const [cardNumber, setCardNumber] = useState('');
     const [cardExpiry, setCardExpiry] = useState('');
+    const [cvv, setCvv] = useState('');
+    const [cardHolderName, setCardHolderName] = useState('');
+    const [transactionDetails, setTransactionDetails] = useState<any>(null);
 
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'esewa'>('esewa');
 
@@ -49,6 +55,7 @@ const BookingPage: React.FC = () => {
             const response = await axios.get(`http://localhost:5000/api/gov/license/check/${licenseNumber}`);
             if (response.data.valid) {
                 setLicenseStatus('valid');
+                if (response.data.holderName) setLicenseName(response.data.holderName);
             } else {
                 setLicenseStatus('invalid');
                 setError('License is invalid or expired.');
@@ -67,6 +74,7 @@ const BookingPage: React.FC = () => {
             const response = await axios.get(`http://localhost:5000/api/gov/nid/check/${nidNumber}`);
             if (response.data.valid) {
                 setNidStatus('valid');
+                if (response.data.fullName) setNidName(response.data.fullName);
             } else {
                 setNidStatus('invalid');
                 setError('National ID is invalid or not found.');
@@ -101,9 +109,15 @@ const BookingPage: React.FC = () => {
             formData.append('startDate', startDate);
             formData.append('endDate', endDate);
             formData.append('location', location);
+            formData.append('rentalType', rentalType);
 
-            formData.append('licenseNumber', licenseNumber);
-            formData.append('nidNumber', nidNumber);
+            if (rentalType === 'self') {
+                formData.append('licenseNumber', licenseNumber);
+                formData.append('licenseName', licenseName);
+            } else {
+                formData.append('nidNumber', nidNumber);
+                formData.append('nidName', nidName);
+            }
 
             if (licenseFront) formData.append('licenseFront', licenseFront);
             if (licenseBack) formData.append('licenseBack', licenseBack);
@@ -117,9 +131,17 @@ const BookingPage: React.FC = () => {
             }
 
             formData.append('paymentStatus', isEsewa ? 'Pending' : 'Completed');
-            // Assuming price is "Rs. 2000" or similar, need numeric for eSewa
-            const numericPrice = parseFloat(String(car?.price).replace(/[^0-9.]/g, '')) || 0;
-            formData.append('totalPrice', String(numericPrice));
+
+            // Calculate Total Price (Rate * Days + Driver Fee)
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end.getTime() - start.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+            const dailyRate = parseFloat(String(car?.price).replace(/[^0-9.]/g, '')) || 0;
+            const driverFeePerDay = rentalType === 'driver' ? 1000 : 0;
+            const totalAmount = (dailyRate + driverFeePerDay) * diffDays;
+
+            formData.append('totalPrice', String(totalAmount));
 
             const response = await axios.post('http://localhost:5000/api/bookings', formData, {
                 headers: {
@@ -129,18 +151,48 @@ const BookingPage: React.FC = () => {
             });
 
             if (isEsewa) {
-                return { bookingId: response.data._id, totalPrice: numericPrice };
+                return { bookingId: response.data._id, totalPrice: totalAmount };
             }
 
-            setStep(5);
+            setStep(6);
         } catch (err: any) {
             const errorMsg = err.response?.data?.message || err.message || 'Failed to create booking.';
             setError(errorMsg);
             console.error("Booking Error:", err);
+            return null; // Return null on error
         } finally {
             if (!isEsewa) setLoading(false);
         }
     };
+
+    const handleCardPayment = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            // 1. Create booking first
+            const bookingResult: any = await handleSubmit(true); // true means return bookingId without redirecting to success step
+            if (!bookingResult || !bookingResult.bookingId) return;
+
+            // 2. Process Card Payment
+            const paymentRes = await axios.post('http://localhost:5000/api/payment/mock-card-pay', {
+                cardNumber: cardNumber.replace(/\s/g, ''),
+                expiryDate: cardExpiry,
+                cvv: cvv,
+                cardHolderName: cardHolderName,
+                bookingId: bookingResult.bookingId,
+                amount: bookingResult.totalPrice
+            });
+
+            if (paymentRes.data.success) {
+                setTransactionDetails(paymentRes.data);
+                setStep(6);
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Payment failed. Please check your card details.');
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const nextStep = async () => {
         // Validation Logic
@@ -151,24 +203,33 @@ const BookingPage: React.FC = () => {
             }
         }
         if (step === 2) {
-            if (licenseStatus !== 'valid' || !licenseFront || !licenseBack) {
-                setError('Please verify your license and upload both front and back images.');
+            if (rentalType === 'self') {
+                if (!licenseName || licenseStatus !== 'valid' || !licenseFront || !licenseBack) {
+                    setError('Please provide your name, verify your license and upload both front and back images.');
+                    return;
+                }
+                // If self drive, we jump to step 4 (Summary) skipping step 3 (NID specifically for drivers)
+                setStep(4);
                 return;
+            } else {
+                // If driver, we proceed to step 3 (NID)
             }
         }
         if (step === 3) {
-            if (nidStatus !== 'valid' || !nidFront || !nidBack) {
-                setError('Please verify your National ID and upload both front and back images.');
-                return;
-            }
-        }
-        if (step === 4) {
-            if (paymentMethod === 'card') {
-                if (!cardNumber || !cardExpiry) {
-                    setError('Please enter payment details.');
+            if (rentalType === 'driver') {
+                if (!nidName || nidStatus !== 'valid' || !nidFront || !nidBack) {
+                    setError('Please provide your name, verify your National ID and upload both front and back images.');
                     return;
                 }
-                handleSubmit(false);
+            }
+        }
+        if (step === 5) {
+            if (paymentMethod === 'card') {
+                if (!cardNumber || !cardExpiry || !cvv || !cardHolderName) {
+                    setError('Please fill in all card details.');
+                    return;
+                }
+                handleCardPayment();
                 return;
             } else if (paymentMethod === 'esewa') {
                 // eSewa Flow
@@ -225,7 +286,21 @@ const BookingPage: React.FC = () => {
         }
 
         setError(null);
-        setStep(step + 1);
+        if (step === 1 && rentalType === 'driver') {
+            setStep(3); // Skip Step 2 (License) for driver rentals
+        } else {
+            setStep(step + 1);
+        }
+    };
+
+    const prevStep = () => {
+        if (step === 4 && rentalType === 'self') {
+            setStep(2);
+        } else if (step === 3 && rentalType === 'driver') {
+            setStep(1);
+        } else {
+            setStep(step - 1);
+        }
     };
 
     if (!car) return null;
@@ -246,20 +321,21 @@ const BookingPage: React.FC = () => {
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm uppercase tracking-wider text-gray-400">Step {step} of 5</p>
+                        <p className="text-sm uppercase tracking-wider text-gray-400">Step {step} of 6</p>
                         <p className="font-semibold text-blue-400">
                             {step === 1 && "Trip Details"}
                             {step === 2 && "License Verification"}
                             {step === 3 && "Identity Verification"}
-                            {step === 4 && "Payment"}
-                            {step === 5 && "Confirmation"}
+                            {step === 4 && "Review Summary"}
+                            {step === 5 && "Payment"}
+                            {step === 6 && "Confirmation"}
                         </p>
                     </div>
                 </div>
 
                 {/* Progress Bar */}
                 <div className="h-1.5 bg-gray-100 flex">
-                    <div className="h-full bg-blue-600 transition-all duration-700 ease-in-out" style={{ width: `${(step / 5) * 100}%` }}></div>
+                    <div className="h-full bg-blue-600 transition-all duration-700 ease-in-out" style={{ width: `${(step / 6) * 100}%` }}></div>
                 </div>
 
                 <div className="p-8 sm:p-12 min-h-[500px] flex flex-col">
@@ -310,6 +386,36 @@ const BookingPage: React.FC = () => {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="pt-8 border-t border-gray-100 space-y-4">
+                                    <label className="block text-sm font-bold text-gray-700 uppercase tracking-widest">Choose Service Type</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div
+                                            onClick={() => setRentalType('self')}
+                                            className={`cursor-pointer p-6 border-2 rounded-2xl transition-all flex items-center gap-4 ${rentalType === 'self' ? 'border-blue-600 bg-blue-50 ring-4 ring-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                                        >
+                                            <div className={`p-4 rounded-full ${rentalType === 'self' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400'}`}>
+                                                <User className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-gray-900">Self Drive</p>
+                                                <p className="text-xs text-gray-500 mt-1">Rent and drive the car on your own.</p>
+                                            </div>
+                                        </div>
+                                        <div
+                                            onClick={() => setRentalType('driver')}
+                                            className={`cursor-pointer p-6 border-2 rounded-2xl transition-all flex items-center gap-4 ${rentalType === 'driver' ? 'border-blue-600 bg-blue-50 ring-4 ring-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                                        >
+                                            <div className={`p-4 rounded-full ${rentalType === 'driver' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400'}`}>
+                                                <CreditCard className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-gray-900">Hire a Driver</p>
+                                                <p className="text-xs text-gray-500 mt-1">Get a verified professional driver.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -321,24 +427,36 @@ const BookingPage: React.FC = () => {
                                 </h2>
 
                                 {/* License Check */}
-                                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                                    <label className="block text-sm font-bold text-blue-900 mb-2">Driving License Number</label>
-                                    <div className="flex gap-4">
+                                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-blue-900 mb-2">Full Name (as on License)</label>
                                         <input
                                             type="text"
-                                            placeholder="LICENSE-NO-123"
-                                            value={licenseNumber}
-                                            onChange={(e) => setLicenseNumber(e.target.value)}
-                                            className="flex-1 px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                            placeholder="Enter your full name"
+                                            value={licenseName}
+                                            onChange={(e) => setLicenseName(e.target.value)}
+                                            className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                                         />
-                                        <button
-                                            onClick={handleVerifyLicense}
-                                            disabled={licenseStatus === 'verifying' || licenseStatus === 'valid'}
-                                            className={`px-6 py-3 rounded-xl font-bold text-white transition-all shadow-md ${licenseStatus === 'valid' ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'
-                                                }`}
-                                        >
-                                            {licenseStatus === 'verifying' ? 'Verifying...' : licenseStatus === 'valid' ? 'Verified' : 'Verify'}
-                                        </button>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-blue-900 mb-2">Driving License Number</label>
+                                        <div className="flex gap-4">
+                                            <input
+                                                type="text"
+                                                placeholder="LICENSE-NO-123"
+                                                value={licenseNumber}
+                                                onChange={(e) => setLicenseNumber(e.target.value)}
+                                                className="flex-1 px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                            />
+                                            <button
+                                                onClick={handleVerifyLicense}
+                                                disabled={licenseStatus === 'verifying' || licenseStatus === 'valid'}
+                                                className={`px-6 py-3 rounded-xl font-bold text-white transition-all shadow-md ${licenseStatus === 'valid' ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'
+                                                    }`}
+                                            >
+                                                {licenseStatus === 'verifying' ? 'Verifying...' : licenseStatus === 'valid' ? 'Verified' : 'Verify'}
+                                            </button>
+                                        </div>
                                     </div>
                                     {licenseStatus === 'valid' && (
                                         <p className="mt-2 text-sm text-green-700 font-medium flex items-center gap-1">
@@ -410,24 +528,36 @@ const BookingPage: React.FC = () => {
                                     Identity Verification
                                 </h2>
 
-                                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100">
-                                    <label className="block text-sm font-bold text-purple-900 mb-2">National ID (NID) Number</label>
-                                    <div className="flex gap-4">
+                                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-purple-900 mb-2">Full Name (as on NID)</label>
                                         <input
                                             type="text"
-                                            placeholder="NID-XXXX-XXXX"
-                                            value={nidNumber}
-                                            onChange={(e) => setNidNumber(e.target.value)}
-                                            className="flex-1 px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                                            placeholder="Enter your full name"
+                                            value={nidName}
+                                            onChange={(e) => setNidName(e.target.value)}
+                                            className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none bg-white"
                                         />
-                                        <button
-                                            onClick={handleVerifyNID}
-                                            disabled={nidStatus === 'verifying' || nidStatus === 'valid'}
-                                            className={`px-6 py-3 rounded-xl font-bold text-white transition-all shadow-md ${nidStatus === 'valid' ? 'bg-green-600' : 'bg-purple-600 hover:bg-purple-700'
-                                                }`}
-                                        >
-                                            {nidStatus === 'verifying' ? 'Verifying...' : nidStatus === 'valid' ? 'Verified' : 'Verify'}
-                                        </button>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-purple-900 mb-2">National ID (NID) Number</label>
+                                        <div className="flex gap-4">
+                                            <input
+                                                type="text"
+                                                placeholder="NID-XXXX-XXXX"
+                                                value={nidNumber}
+                                                onChange={(e) => setNidNumber(e.target.value)}
+                                                className="flex-1 px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                                            />
+                                            <button
+                                                onClick={handleVerifyNID}
+                                                disabled={nidStatus === 'verifying' || nidStatus === 'valid'}
+                                                className={`px-6 py-3 rounded-xl font-bold text-white transition-all shadow-md ${nidStatus === 'valid' ? 'bg-green-600' : 'bg-purple-600 hover:bg-purple-700'
+                                                    }`}
+                                            >
+                                                {nidStatus === 'verifying' ? 'Verifying...' : nidStatus === 'valid' ? 'Verified' : 'Verify'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -487,7 +617,131 @@ const BookingPage: React.FC = () => {
                             </div>
                         )}
 
-                        {step === 4 && (
+                        {step === 4 && (() => {
+                            const start = new Date(startDate);
+                            const end = new Date(endDate);
+                            const diffTime = Math.abs(end.getTime() - start.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+                            const dailyRate = parseFloat(String(car.price).replace(/[^0-9.]/g, '')) || 0;
+                            const driverFeePerDay = rentalType === 'driver' ? 1000 : 0;
+                            const totalAmount = (dailyRate + driverFeePerDay) * diffDays;
+
+                            return (
+                                <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
+                                    <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                                        <CheckCircle className="w-8 h-8 text-blue-600" />
+                                        Review Your Booking
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-50 p-8 rounded-2xl border border-gray-200">
+                                        <div className="space-y-4">
+                                            <h3 className="text-xl font-bold text-gray-800 border-b pb-4 flex items-center justify-between">
+                                                <span>Trip Details</span>
+                                                <span className="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-1 rounded">Confirmed</span>
+                                            </h3>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500">Duration:</span>
+                                                <span className="font-semibold text-gray-900">{startDate} to {endDate} ({diffDays} days)</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500">Pick-up:</span>
+                                                <span className="font-semibold text-gray-900">{location}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center p-1">
+                                                        <img src={car.image || "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80"} alt={car.name} className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-900">{car.name}</p>
+                                                        <p className="text-xs text-gray-500">{car.type}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-2 text-sm">
+                                                <span className="text-gray-500">Service:</span>
+                                                <span className="font-bold text-blue-600">{rentalType === 'self' ? 'Self Drive' : 'Hire a Driver'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-2 text-sm">
+                                                <span className="text-gray-500">Daily Rate:</span>
+                                                <span className="font-medium text-gray-900">Rs. {dailyRate}</span>
+                                            </div>
+                                            {rentalType === 'driver' && (
+                                                <div className="flex justify-between items-center pt-2 text-sm">
+                                                    <span className="text-gray-500">Driver Fee:</span>
+                                                    <span className="font-medium text-gray-900">Rs. 1000 / day</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                                <span className="font-bold text-gray-700">Total Calculation:</span>
+                                                <span className="text-xl font-black text-blue-600">Rs. {totalAmount}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h3 className="text-xl font-bold text-gray-800 border-b pb-4">Verification Details</h3>
+                                            <div className="space-y-3">
+                                                {rentalType === 'self' ? (
+                                                    <div className="p-4 bg-white rounded-xl border border-gray-200 space-y-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-xs font-bold text-gray-400 uppercase">Driving License</p>
+                                                            <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">VERIFIED</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-500">Holder Name:</span>
+                                                            <span className="font-bold text-gray-900">{licenseName}</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-500">ID Number:</span>
+                                                            <span className="font-mono text-gray-900">{licenseNumber}</span>
+                                                        </div>
+                                                        <div className="flex gap-2 pt-1">
+                                                            <div className="px-2 py-1 bg-gray-50 border rounded text-[10px] text-gray-600 flex items-center gap-1">
+                                                                <CheckCircle className="w-3 h-3 text-green-500" /> Front Image
+                                                            </div>
+                                                            <div className="px-2 py-1 bg-gray-50 border rounded text-[10px] text-gray-600 flex items-center gap-1">
+                                                                <CheckCircle className="w-3 h-3 text-green-500" /> Back Image
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-4 bg-white rounded-xl border border-gray-200 space-y-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-xs font-bold text-gray-400 uppercase">National ID</p>
+                                                            <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">VERIFIED</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-500">Name:</span>
+                                                            <span className="font-bold text-gray-900">{nidName}</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-500">NID Number:</span>
+                                                            <span className="font-mono text-gray-900">{nidNumber}</span>
+                                                        </div>
+                                                        <div className="flex gap-2 pt-1">
+                                                            <div className="px-2 py-1 bg-gray-50 border rounded text-[10px] text-gray-600 flex items-center gap-1">
+                                                                <CheckCircle className="w-3 h-3 text-green-500" /> Front Image
+                                                            </div>
+                                                            <div className="px-2 py-1 bg-gray-50 border rounded text-[10px] text-gray-600 flex items-center gap-1">
+                                                                <CheckCircle className="w-3 h-3 text-green-500" /> Back Image
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-blue-50 p-5 rounded-2xl text-blue-800 text-sm flex items-start gap-4">
+                                        <AlertCircle className="w-6 h-6 shrink-0 text-blue-400" />
+                                        <div>
+                                            <p className="font-bold mb-1">Final Confirmation Required</p>
+                                            <p>Please review everything above. Once you click <strong>Confirm Details</strong>, you'll be able to proceed with payment and finalize your booking.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {step === 5 && (
                             <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
                                 <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                                     <CreditCard className="w-8 h-8 text-blue-600" />
@@ -527,41 +781,81 @@ const BookingPage: React.FC = () => {
                                     ) : (
                                         <div className="space-y-6">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Card Number</label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Cardholder Name</label>
                                                 <input
                                                     type="text"
-                                                    placeholder="Enter any random number (Test Mode)"
-                                                    value={cardNumber}
-                                                    onChange={(e) => setCardNumber(e.target.value)}
+                                                    placeholder="Enter name as on card"
+                                                    value={cardHolderName}
+                                                    onChange={(e) => setCardHolderName(e.target.value)}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                                 />
                                             </div>
-                                            <div className="grid grid-cols-1 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Card Number</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="#### #### #### ####"
+                                                    value={cardNumber}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                                        const matched = val.match(/.{1,4}/g);
+                                                        setCardNumber(matched ? matched.join(' ') : val);
+                                                    }}
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-6">
                                                 <div>
                                                     <label className="block text-sm font-bold text-gray-700 mb-2">Expiry Date</label>
                                                     <input
                                                         type="text"
-                                                        placeholder="DD-MM-YYYY (Any future date)"
+                                                        placeholder="MM/YY"
                                                         value={cardExpiry}
-                                                        onChange={(e) => setCardExpiry(e.target.value)}
+                                                        onChange={(e) => {
+                                                            let val = e.target.value.replace(/\D/g, '');
+                                                            if (val.length > 4) val = val.slice(0, 4);
+                                                            if (val.length > 2) val = val.slice(0, 2) + '/' + val.slice(2);
+                                                            setCardExpiry(val);
+                                                        }}
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">CVV (SVC)</label>
+                                                    <input
+                                                        type="password"
+                                                        placeholder="***"
+                                                        maxLength={3}
+                                                        value={cvv}
+                                                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
                                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                                     />
                                                 </div>
                                             </div>
+                                            <p className="text-[10px] text-gray-400 italic">
+                                                SECURITY NOTE: This is a mock payment gateway. No real bank is used, and no sensitive card data is stored.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
 
-                        {step === 5 && (
+                        {step === 6 && (
                             <div className="h-full flex flex-col items-center justify-center text-center animate-in zoom-in duration-500 py-12">
                                 <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 shadow-sm">
                                     <CheckCircle className="w-12 h-12" />
                                 </div>
                                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Booking Request Sent!</h2>
+                                {transactionDetails && (
+                                    <div className="mb-6 p-4 bg-green-50 rounded-xl border border-green-100 text-sm">
+                                        <p className="font-bold text-green-800 mb-1">Payment Verified</p>
+                                        <p className="text-green-600">Transaction ID: {transactionDetails.transactionId}</p>
+                                        <p className="text-green-600">Card used: **** **** **** {transactionDetails.last4Digits}</p>
+                                    </div>
+                                )}
                                 <p className="text-gray-600 max-w-lg mx-auto text-lg leading-relaxed">
-                                    Your request for the <strong>{car.name}</strong> has been successfully submitted. We will review your documents and send a confirmation to your email shortly.
+                                    Your request for the <strong>{car.name}</strong> has been successfully submitted. We will review your documents and send a confirmation shortly.
                                 </p>
                                 <button
                                     onClick={() => navigate('/fleet')}
@@ -575,20 +869,25 @@ const BookingPage: React.FC = () => {
                 </div>
 
                 {/* Footer Buttons */}
-                {step < 5 && (
+                {step < 6 && (
                     <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                         <button
-                            onClick={() => step > 1 ? setStep(step - 1) : navigate('/fleet')}
+                            onClick={prevStep}
                             className="px-8 py-3 text-gray-600 font-semibold hover:text-gray-900 transition-colors flex items-center gap-2"
                         >
-                            {step > 1 ? 'Back' : 'Cancel'}
+                            {step > 1 ? 'Back' : (
+                                <div className="flex items-center gap-2">
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span>Cancel</span>
+                                </div>
+                            )}
                         </button>
                         <button
                             onClick={nextStep}
                             disabled={loading}
                             className={`px-10 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            {loading ? 'Processing...' : step === 4 ? 'Confirm Payment' : 'Next Step'}
+                            {loading ? 'Processing...' : step === 5 ? 'Confirm & Pay' : (step === 4) ? 'Confirm Details' : 'Next Step'}
                         </button>
                     </div>
                 )}
