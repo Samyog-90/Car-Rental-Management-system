@@ -13,6 +13,8 @@ const Home: React.FC = () => {
     const [destination, setDestination] = useState('');
     const [capacity, setCapacity] = useState('');
     const [roadCondition, setRoadCondition] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     const [vehicles] = useState([
         { id: 1, name: "Toyota Corolla", price: "Rs. 2,000/day", image: "https://imagecdnsa.zigwheels.ae/large/gallery/exterior/40/417/toyota-corolla-front-angle-low-view-931780.jpg" },
@@ -44,7 +46,9 @@ const Home: React.FC = () => {
                 destination,
                 capacity,
                 roadCondition,
-                recommendation
+                recommendation,
+                startDate,
+                endDate
             }
         });
     };
@@ -107,7 +111,7 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Replaced plain inputs with PlaceAutocomplete */}
+                           
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Location
@@ -127,6 +131,30 @@ const Home: React.FC = () => {
                                     value={destination}
                                     onChange={setDestination}
                                     placeholder="Drop-off location (e.g. Pokhara)"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Start Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    End Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
                             </div>
                         </div>

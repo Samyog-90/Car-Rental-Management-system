@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { connectDB } = require("../config/db");
+const { getDB } = require("../config/db");
 const authMiddleware = require("../middlewares/authMiddleware");
 const { register, login, getProfile, updateProfile, changePassword } = require("../controllers/userController");
 
@@ -15,8 +15,9 @@ router.put("/change-password", authMiddleware, changePassword);
 // GET all users
 router.get("/", async (req, res) => {
   try {
-    const db = await connectDB();
+    const db = getDB();
     const users = await db.collection("users").find().toArray();
+
 
     res.status(200).json(users);
   } catch (error) {

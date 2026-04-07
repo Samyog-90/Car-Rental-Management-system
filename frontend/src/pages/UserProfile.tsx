@@ -4,6 +4,7 @@ import { User, Lock, Save, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import DocumentOCR from '../components/DocumentOCR';
 
 const UserProfile: React.FC = () => {
     const navigate = useNavigate();
@@ -20,19 +21,30 @@ const UserProfile: React.FC = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             const token = localStorage.getItem('token');
-            if (!token) {
-                navigate('/login');
+            const adminToken = localStorage.getItem('adminToken');
+            
+            if (!token && !adminToken) {
+                navigate('/');
                 return;
             }
 
             try {
-                const response = await axios.get('http://localhost:5000/api/users/profile', {
-                    headers: { Authorization: `Bearer ${token}` }
+                // Prioritize standard user token if both exist for some reason
+                const endpoint = token ? '/api/users/profile' : '/api/admin/profile';
+                const usedToken = token || adminToken;
+
+                if (!usedToken) {
+                    navigate('/');
+                    return;
+                }
+                
+                const response = await axios.get(`http://localhost:5000${endpoint}`, {
+                    headers: { Authorization: `Bearer ${usedToken}` }
                 });
                 setUser(response.data);
             } catch (err) {
                 console.error(err);
-                navigate('/login');
+                navigate('/');
             } finally {
                 setLoading(false);
             }
@@ -53,11 +65,15 @@ const UserProfile: React.FC = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.put('http://localhost:5000/api/users/change-password', {
+            const adminToken = localStorage.getItem('adminToken');
+            const usedToken = token || adminToken;
+            const endpoint = token ? '/api/users/change-password' : '/api/admin/change-password';
+
+            await axios.put(`http://localhost:5000${endpoint}`, {
                 currentPassword,
                 newPassword
             }, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${usedToken}` }
             });
 
             setMessage('Password updated successfully');
@@ -72,7 +88,9 @@ const UserProfile: React.FC = () => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        navigate('/login');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        navigate('/');
     };
 
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -90,17 +108,27 @@ const UserProfile: React.FC = () => {
                                 <User className="w-8 h-8" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">{user?.fullName}</h1>
+                                <h1 className="text-2xl font-bold text-gray-900">{user?.fullName || user?.name}</h1>
                                 <p className="text-gray-500">{user?.email}</p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium border border-red-200 hover:border-red-300"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            Sign Out
-                        </button>
+                        <div className="flex gap-2">
+                            {localStorage.getItem('adminToken') && (
+                                <button
+                                    onClick={() => navigate('/admin')}
+                                    className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-blue-200 hover:border-blue-300"
+                                >
+                                    Admin Panel
+                                </button>
+                            )}
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium border border-red-200 hover:border-red-300"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Sign Out
+                            </button>
+                        </div>
                     </div>
 
                     {/* Settings Grid */}
@@ -161,6 +189,60 @@ const UserProfile: React.FC = () => {
                                 Update Password
                             </button>
                         </form>
+                    </div>
+
+                    {/* Document Verification Section */}
+                    <div className="bg-white rounded-2xl shadow-sm p-8 space-y-8">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                            <span className="bg-blue-100 p-2 rounded-lg"><Save className="w-5 h-5 text-blue-600" /></span>
+                            Document Verification (OCR)
+                        </h2>
+                        
+                        <div className="grid grid-cols-1 gap-8">
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-gray-700">Driving License</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <DocumentOCR 
+                                        title="License Front" 
+                                        docType="LICENSE_FRONT"
+                                        onConfirm={(data: any) => {
+                                            console.log("Confirmed License Front:", data);
+                                            setMessage("License Front verified and saved successfully!");
+                                        }} 
+                                    />
+                                    <DocumentOCR 
+                                        title="License Back" 
+                                        docType="LICENSE_BACK"
+                                        onConfirm={(data: any) => {
+                                            console.log("Confirmed License Back:", data);
+                                            setMessage("License Back verified and saved successfully!");
+                                        }} 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="border-t border-gray-100 pt-8 space-y-4">
+                                <h3 className="text-lg font-semibold text-gray-700">National ID</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <DocumentOCR 
+                                        title="NID Front" 
+                                        docType="NID_FRONT"
+                                        onConfirm={(data: any) => {
+                                            console.log("Confirmed NID Front:", data);
+                                            setMessage("NID Front verified and saved successfully!");
+                                        }} 
+                                    />
+                                    <DocumentOCR 
+                                        title="NID Back" 
+                                        docType="NID_BACK"
+                                        onConfirm={(data: any) => {
+                                            console.log("Confirmed NID Back:", data);
+                                            setMessage("NID Back verified and saved successfully!");
+                                        }} 
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -21,7 +21,7 @@ interface MapComponentProps {
     destination: string;
 }
 
-// Approximate coordinates for demo places
+
 const CITY_COORDINATES: { [key: string]: [number, number] } = {
     "Kathmandu": [27.7172, 85.3240],
     "Lalitpur": [27.6644, 85.3188],
@@ -45,7 +45,7 @@ const CITY_COORDINATES: { [key: string]: [number, number] } = {
     "Ilam": [26.9080, 87.9250]
 };
 
-// Component to update map center based on props
+
 const MapUpdater: React.FC<{ center: [number, number], zoom: number }> = ({ center, zoom }) => {
     const map = useMap();
     useEffect(() => {
@@ -55,7 +55,7 @@ const MapUpdater: React.FC<{ center: [number, number], zoom: number }> = ({ cent
 };
 
 const MapComponent: React.FC<MapComponentProps> = ({ location, destination }) => {
-    const defaultCenter: [number, number] = [28.3949, 84.1240]; // Center of Nepal
+    const defaultCenter: [number, number] = [28.3949, 84.1240]; 
     const defaultZoom = 7;
 
     const locCoords = CITY_COORDINATES[location] || null;

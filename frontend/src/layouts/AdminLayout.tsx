@@ -16,7 +16,10 @@ const AdminLayout: React.FC = () => {
 
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
-        navigate('/admin/login');
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/');
     };
 
     const menuItems = [

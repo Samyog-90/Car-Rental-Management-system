@@ -6,8 +6,12 @@ let client;
 let db;
 
 async function connectDB() {
+  if (db) return db;
+
   try {
-    client = new MongoClient(uri);
+    if (!client) {
+      client = new MongoClient(uri);
+    }
     await client.connect();
 
     db = client.db("car_rental_db");
@@ -28,3 +32,4 @@ const getDB = () => {
 }
 
 module.exports = { connectDB, getDB };
+

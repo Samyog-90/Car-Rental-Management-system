@@ -3,7 +3,7 @@ const router = express.Router();
 const { getAllCars, getCarById, createCar, updateCar, deleteCar } = require("../controllers/carController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-// Public routes (if any, e.g. viewing cars)
+// Public routes 
 router.get("/", getAllCars);
 router.get("/:id", getCarById);
 

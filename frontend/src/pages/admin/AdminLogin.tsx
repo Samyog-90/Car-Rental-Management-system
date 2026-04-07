@@ -21,8 +21,10 @@ const AdminLogin: React.FC = () => {
 
             if (response.data.token) {
                 localStorage.setItem('adminToken', response.data.token);
-                // Also store user info if needed
                 localStorage.setItem('adminUser', JSON.stringify(response.data.admin));
+                // Clear user tokens to prevent profile confusion
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
                 navigate('/admin');
             }
         } catch (err: any) {

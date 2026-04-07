@@ -2,32 +2,15 @@ const crypto = require('crypto');
 const Booking = require('../models/Booking');
 const { ObjectId } = require('mongodb');
 
-
-const validateLuhn = (cardNumber) => {
-    let sum = 0;
-    let shouldDouble = false;
-    for (let i = cardNumber.length - 1; i >= 0; i--) {
-        let digit = parseInt(cardNumber.charAt(i));
-        if (shouldDouble) {
-            digit *= 2;
-            if (digit > 9) digit -= 9;
-        }
-        sum += digit;
-        shouldDouble = !shouldDouble;
-    }
-    return sum % 10 === 0;
-};
-
 exports.getEsewaConfig = async (req, res) => {
     try {
         const { amount, transactionUuid } = req.body;
 
         const totalAmount = amount; 
-        const productCode = 'EPAYTEST';
-        const secretKey = '8gBm/:&EnhH.1/q';
+        const productCode = process.env.ESEWA_PRODUCT_CODE || 'EPAYTEST';
+        const secretKey = process.env.ESEWA_SECRET_KEY || '8gBm/:&EnhH.1/q';
 
-       
-        const signatureString = `${totalAmount},${transactionUuid},${productCode}`;
+        const signatureString = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${productCode}`;
         const signature = crypto.createHmac('sha256', secretKey)
             .update(signatureString)
             .digest('base64');
@@ -46,72 +29,63 @@ exports.getEsewaConfig = async (req, res) => {
     }
 };
 
-exports.mockCardPay = async (req, res) => {
+exports.verifyEsewaPay = async (req, res) => {
     try {
-        const { cardNumber, expiryDate, cvv, cardHolderName, bookingId, amount } = req.body;
+        const { data } = req.body;
+        if (!data) {
+            return res.status(400).json({ success: false, message: "No data provided" });
+        }
 
+        // Decode Base64 data
+        const decodedData = Buffer.from(data, 'base64').toString('utf-8');
+        const paymentInfo = JSON.parse(decodedData);
+
+        const { status, total_amount, transaction_uuid, product_code, signature } = paymentInfo;
+
+        if (status !== 'COMPLETE') {
+            return res.status(400).json({ success: false, message: "Payment not completed" });
+        }
+
+        // Verify Signature
+        const secretKey = process.env.ESEWA_SECRET_KEY || '8gBm/:&EnhH.1/q';
+        const signatureString = `transaction_code=${paymentInfo.transaction_code},status=${status},total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code},signed_field_names=${paymentInfo.signed_field_names}`;
         
-        const cleanCardNumber = String(cardNumber).replace(/\s/g, '');
+        const expectedSignature = crypto.createHmac('sha256', secretKey)
+            .update(signatureString)
+            .digest('base64');
 
-       
-        if (!/^\d{16}$/.test(cleanCardNumber)) {
-            return res.status(400).json({ success: false, message: "Payment failed: Card number must be 16 digits" });
+        if (signature !== expectedSignature) {
+            return res.status(400).json({ success: false, message: "Invalid signature" });
         }
 
-        
-        if (!validateLuhn(cleanCardNumber)) {
-            return res.status(400).json({ success: false, message: "Payment failed: Invalid card number (Luhn check failed)" });
-        }
+        // Update Booking
+        const bookingId = transaction_uuid;
+        await Booking.collection().updateOne(
+            { _id: new ObjectId(bookingId) },
+            { $set: { paymentStatus: 'Paid', status: 'Pending' } }
+        );
 
-        
-        if (!/^\d{3}$/.test(cvv)) {
-            return res.status(400).json({ success: false, message: "Payment failed: CVV must be exactly 3 digits" });
-        }
-
-        
-        if (!cardHolderName || cardHolderName.trim().length < 3) {
-            return res.status(400).json({ success: false, message: "Payment failed: Invalid cardholder name" });
-        }
-
-        
-        const expiryMatch = expiryDate.match(/^(0[1-9]|1[0-2])\/([0-9]{2})$/);
-        if (!expiryMatch) {
-            return res.status(400).json({ success: false, message: "Payment failed: Invalid expiry date format (MM/YY)" });
-        }
-
-        const [_, month, year] = expiryMatch;
-        const expiryDateObj = new Date(parseInt(`20${year}`), parseInt(month) - 1);
-        const now = new Date();
-        if (expiryDateObj < new Date(now.getFullYear(), now.getMonth())) {
-            return res.status(400).json({ success: false, message: "Payment failed: Card has expired" });
-        }
-
-       
-        if (bookingId) {
-            await Booking.collection().updateOne(
-                { _id: new ObjectId(bookingId) },
-                { $set: { paymentStatus: 'Paid', status: 'Pending' } }
+        // Update Car Availability
+        const booking = await Booking.collection().findOne({ _id: new ObjectId(bookingId) });
+        if (booking && booking.carId) {
+            const Car = require('../models/Car');
+            await Car.collection().updateOne(
+                { _id: new ObjectId(booking.carId) },
+                { $set: { isAvailable: false } }
             );
         }
 
-        
-        const transactionId = `TXN-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
-        const last4Digits = cleanCardNumber.slice(-4);
-
-       
-        console.log(`[MOCK PAYMENT] Transaction ${transactionId} successful for booking ${bookingId}`);
+        console.log(`[ESEWA PAYMENT] Transaction ${paymentInfo.transaction_code} successful for booking ${bookingId}`);
 
         res.json({
             success: true,
-            transactionId,
-            last4Digits,
+            message: "Payment verified successfully",
             bookingId,
-            amount,
-            message: "Payment successful"
+            booking: booking
         });
 
     } catch (err) {
-        console.error("Card Payment Error:", err);
-        res.status(500).json({ success: false, message: "Payment failed: Internal server error" });
+        console.error("eSewa Verification Error:", err);
+        res.status(500).json({ success: false, message: "Internal server error during verification" });
     }
 };

@@ -13,6 +13,8 @@ const FleetPage: React.FC = () => {
         capacity?: string;
         roadCondition?: string;
         recommendation?: string;
+        startDate?: string;
+        endDate?: string;
     } | null;
 
     const [vehicles, setVehicles] = useState<any[]>([]);
@@ -43,37 +45,32 @@ const FleetPage: React.FC = () => {
     }, [vehicles, state?.recommendation]);
 
     const handleBookNow = (car: any) => {
-        navigate('/booking', { state: { car } });
+        navigate('/booking', { 
+            state: { 
+                car,
+                prefilledData: {
+                    startDate: state?.startDate,
+                    endDate: state?.endDate,
+                    location: state?.location,
+                    rentalType: state?.hireDriver === 'yes' ? 'driver' : 'self'
+                }
+            } 
+        });
     };
 
     const navigate = useNavigate();
 
-    const handleNavigation = (page: string) => {
-        switch (page) {
-            case 'home':
-                navigate('/');
-                break;
-            case 'our-fleet':
-                navigate('/fleet');
-                break;
-            case 'login':
-                navigate('/login');
-                break;
-            default:
-                console.log(`Navigation to ${page} not implemented yet`);
-        }
-    };
+
 
     return (
         <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
 
-            {/* Navigation - Using previous design */}
-            {/* Navigation - Using previous design */}
+          
             <Navbar />
 
-            {/* Main Content */}
+            
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-                {/* Header Section */}
+                
                 <div className="mb-8 sm:mb-12">
                     <div className="inline-block px-4 sm:px-6 py-2 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-4">
                         Corporate Catalog
@@ -101,7 +98,7 @@ const FleetPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                     {displayVehicles.map((vehicle) => (
                         <div
-                            key={vehicle.id}
+                            key={vehicle._id}
                             className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1"
                         >
                             {/* Vehicle Image */}
@@ -128,7 +125,10 @@ const FleetPage: React.FC = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xl sm:text-2xl font-bold text-blue-600">{vehicle.price}</p>
-                                        <p className="text-xs text-gray-500">{vehicle.priceType}</p>
+                                        <p className="text-xs text-gray-500 mb-2">{vehicle.priceType}</p>
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${vehicle.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                            {vehicle.isAvailable ? 'Available' : 'Booked'}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -160,9 +160,14 @@ const FleetPage: React.FC = () => {
                                 {/* Book Now Button */}
                                 <button
                                     onClick={() => handleBookNow(vehicle)}
-                                    className="w-full py-2.5 sm:py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white text-sm sm:text-base font-bold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                                    disabled={!vehicle.isAvailable}
+                                    className={`w-full py-2.5 sm:py-3 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all ${
+                                        vehicle.isAvailable 
+                                        ? 'bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg' 
+                                        : 'bg-gray-400 cursor-not-allowed'
+                                    }`}
                                 >
-                                    Book Now
+                                    {vehicle.isAvailable ? 'Book Now' : 'Currently Unavailable'}
                                 </button>
                             </div>
                         </div>

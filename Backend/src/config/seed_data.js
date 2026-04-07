@@ -1,4 +1,5 @@
 const { getDB } = require("./db");
+const bcrypt = require("bcryptjs");
 
 const seedData = async () => {
     try {
@@ -44,9 +45,103 @@ const seedData = async () => {
         }
         console.log("✅ Mock NIDs Synchronized");
 
+        // Seed Cars
+        const carsCollection = db.collection("cars");
+        const carsCount = await carsCollection.countDocuments();
+        if (carsCount === 0) {
+            const cars = [
+                {
+                    name: "Toyota Corolla",
+                    type: "Sedan",
+                    price: "Rs. 4,500",
+                    priceType: "Per Day",
+                    image: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?q=80&w=800",
+                    automatic: true,
+                    seats: 5,
+                    petrol: "Petrol",
+                    rating: 4.8,
+                    isAvailable: true
+                },
+                {
+                    name: "Hyundai Creta",
+                    type: "SUV",
+                    price: "Rs. 7,500",
+                    priceType: "Per Day",
+                    image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?q=80&w=800",
+                    automatic: true,
+                    seats: 5,
+                    petrol: "Diesel",
+                    rating: 4.9,
+                    isAvailable: true
+                },
+                {
+                    name: "Suzuki Swift",
+                    type: "Hatchback",
+                    price: "Rs. 3,500",
+                    priceType: "Per Day",
+                    image: "https://images.unsplash.com/photo-1590362891991-f776e747a588?q=80&w=800",
+                    automatic: false,
+                    seats: 5,
+                    petrol: "Petrol",
+                    rating: 4.7,
+                    isAvailable: true
+                },
+                {
+                    name: "Land Rover Defender",
+                    type: "SUV",
+                    price: "Rs. 15,000",
+                    priceType: "Per Day",
+                    image: "https://images.unsplash.com/photo-1594502184342-2e12f877aa73?q=80&w=800",
+                    automatic: true,
+                    seats: 7,
+                    petrol: "Diesel",
+                    rating: 5.0,
+                    isAvailable: true
+                }
+            ];
+            await carsCollection.insertMany(cars);
+            console.log("✅ Mock Cars Seeded");
+        }
+
+        // Seed Admin
+        const adminsCollection = db.collection("admins");
+        const adminEmail = "admin@example.com";
+        const existingAdmin = await adminsCollection.findOne({ email: adminEmail });
+        if (!existingAdmin) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash("admin123", salt);
+            await adminsCollection.insertOne({
+                name: "Super Admin",
+                email: adminEmail,
+                password: hashedPassword,
+                role: 'admin',
+                isActive: true,
+                createdAt: new Date()
+            });
+            console.log("✅ Admin Seeded (admin@example.com / admin123)");
+        }
+
+        // Seed User
+        const usersCollection = db.collection("users");
+        const userEmail = "user@example.com";
+        const existingUser = await usersCollection.findOne({ email: userEmail });
+        if (!existingUser) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash("user123", salt);
+            await usersCollection.insertOne({
+                fullName: "Test User",
+                email: userEmail,
+                password: hashedPassword,
+                role: 'user',
+                createdAt: new Date()
+            });
+            console.log("✅ User Seeded (user@example.com / user123)");
+        }
+
     } catch (error) {
         console.error("Seeding failed:", error);
     }
 };
 
 module.exports = { seedData };
+

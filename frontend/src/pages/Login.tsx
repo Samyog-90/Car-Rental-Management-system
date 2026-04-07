@@ -20,6 +20,9 @@ const DriveFlowLogin: React.FC = () => {
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
+                // Clear admin tokens to prevent profile confusion
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminUser');
                 navigate('/home');
                 return;
             }
@@ -36,6 +39,9 @@ const DriveFlowLogin: React.FC = () => {
                 if (adminResponse.data.token) {
                     localStorage.setItem('adminToken', adminResponse.data.token);
                     localStorage.setItem('adminUser', JSON.stringify(adminResponse.data.admin));
+                    // Clear user tokens to prevent profile confusion
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
                     navigate('/admin');
                     return;
                 }

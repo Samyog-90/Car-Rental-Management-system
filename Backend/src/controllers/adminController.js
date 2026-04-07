@@ -127,3 +127,44 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
+exports.getAdminProfile = async (req, res) => {
+  try {
+    const { ObjectId } = require("mongodb");
+    const admin = await Admin.collection().findOne(
+      { _id: new ObjectId(req.admin.id) },
+      { projection: { password: 0 } }
+    );
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+    res.json(admin);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const { ObjectId } = require("mongodb");
+    const admin = await Admin.collection().findOne({ _id: new ObjectId(req.admin.id) });
+
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+
+    const isMatch = await bcrypt.compare(currentPassword, admin.password);
+    if (!isMatch) return res.status(400).json({ message: "Incorrect current password" });
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await Admin.collection().updateOne(
+      { _id: new ObjectId(req.admin.id) },
+      { $set: { password: hashedPassword } }
+    );
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};

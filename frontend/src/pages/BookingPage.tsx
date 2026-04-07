@@ -32,20 +32,28 @@ const BookingPage: React.FC = () => {
     const [nidBack, setNidBack] = useState<File | null>(null);
     const [nidStatus, setNidStatus] = useState<'unverified' | 'verifying' | 'valid' | 'invalid'>('unverified');
 
-    // Payment (Mock)
-    const [cardNumber, setCardNumber] = useState('');
-    const [cardExpiry, setCardExpiry] = useState('');
-    const [cvv, setCvv] = useState('');
-    const [cardHolderName, setCardHolderName] = useState('');
-    const [transactionDetails, setTransactionDetails] = useState<any>(null);
-
-    const [paymentMethod, setPaymentMethod] = useState<'card' | 'esewa'>('esewa');
+    const [paymentMethod] = useState<'esewa'>('esewa');
 
     useEffect(() => {
         if (!car) {
             navigate('/fleet');
+            return;
         }
-    }, [car, navigate]);
+
+        // Handle pre-filled data from Home Page
+        const prefilled = locationHook.state?.prefilledData;
+        if (prefilled) {
+            if (prefilled.startDate) setStartDate(prefilled.startDate);
+            if (prefilled.endDate) setEndDate(prefilled.endDate);
+            if (prefilled.location) setLocation(prefilled.location);
+            if (prefilled.rentalType) setRentalType(prefilled.rentalType);
+
+            // Skip step 1 if all required fields are pre-filled
+            if (prefilled.startDate && prefilled.endDate && prefilled.location) {
+                setStep(prefilled.rentalType === 'driver' ? 3 : 2);
+            }
+        }
+    }, [car, navigate, locationHook.state]);
 
     const handleVerifyLicense = async () => {
         if (!licenseNumber) return;
@@ -125,10 +133,6 @@ const BookingPage: React.FC = () => {
             if (nidBack) formData.append('nidBack', nidBack);
 
             formData.append('paymentMethod', paymentMethod);
-            if (paymentMethod === 'card') {
-                formData.append('cardNumber', cardNumber);
-                formData.append('cardExpiry', cardExpiry);
-            }
 
             formData.append('paymentStatus', isEsewa ? 'Pending' : 'Completed');
 
@@ -165,34 +169,6 @@ const BookingPage: React.FC = () => {
         }
     };
 
-    const handleCardPayment = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            // 1. Create booking first
-            const bookingResult: any = await handleSubmit(true); // true means return bookingId without redirecting to success step
-            if (!bookingResult || !bookingResult.bookingId) return;
-
-            // 2. Process Card Payment
-            const paymentRes = await axios.post('http://localhost:5000/api/payment/mock-card-pay', {
-                cardNumber: cardNumber.replace(/\s/g, ''),
-                expiryDate: cardExpiry,
-                cvv: cvv,
-                cardHolderName: cardHolderName,
-                bookingId: bookingResult.bookingId,
-                amount: bookingResult.totalPrice
-            });
-
-            if (paymentRes.data.success) {
-                setTransactionDetails(paymentRes.data);
-                setStep(6);
-            }
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Payment failed. Please check your card details.');
-        } finally {
-            setLoading(false);
-        }
-    }
 
     const nextStep = async () => {
         // Validation Logic
@@ -224,14 +200,7 @@ const BookingPage: React.FC = () => {
             }
         }
         if (step === 5) {
-            if (paymentMethod === 'card') {
-                if (!cardNumber || !cardExpiry || !cvv || !cardHolderName) {
-                    setError('Please fill in all card details.');
-                    return;
-                }
-                handleCardPayment();
-                return;
-            } else if (paymentMethod === 'esewa') {
+            if (paymentMethod === 'esewa') {
                 // eSewa Flow
                 try {
                     const result = await handleSubmit(true);
@@ -754,117 +723,102 @@ const BookingPage: React.FC = () => {
                                     </div>
 
                                     {/* Payment Method Selector */}
-                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="flex justify-center mb-8">
                                         <div
-                                            onClick={() => setPaymentMethod('esewa')}
-                                            className={`cursor-pointer p-4 border rounded-xl flex items-center justify-center gap-2 transition-all ${paymentMethod === 'esewa' ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300'}`}
+                                            className="p-4 border border-green-500 bg-green-50 ring-2 ring-green-200 rounded-xl flex items-center justify-center gap-2 w-full max-w-xs"
                                         >
                                             <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-xs">e</div>
                                             <span className="font-bold text-gray-800">eSewa</span>
                                         </div>
-                                        <div
-                                            onClick={() => setPaymentMethod('card')}
-                                            className={`cursor-pointer p-4 border rounded-xl flex items-center justify-center gap-2 transition-all ${paymentMethod === 'card' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}`}
+                                    </div>
+
+                                    <div className="text-center py-6">
+                                        <p className="text-gray-600 mb-4">You will be redirected to eSewa to complete your payment securely.</p>
+                                        <div className="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
+                                            Nepal's Most Trusted Payment Gateway
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 6 && (() => {
+                            const start = new Date(startDate);
+                            const end = new Date(endDate);
+                            const diffTime = Math.abs(end.getTime() - start.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+                            const dailyRate = parseFloat(String(car.price).replace(/[^0-9.]/g, '')) || 0;
+                            const driverFeePerDay = rentalType === 'driver' ? 1000 : 0;
+                            const totalAmount = (dailyRate + driverFeePerDay) * diffDays;
+
+                            return (
+                                <div className="h-full flex flex-col items-center animate-in zoom-in duration-500 py-6">
+                                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 shadow-sm">
+                                        <CheckCircle className="w-10 h-10" />
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+                                    <p className="text-gray-600 mb-8">Your trip has been successfully scheduled.</p>
+
+                                    {/* Invoice Section */}
+                                    <div className="w-full max-w-lg bg-white border-2 border-gray-100 rounded-2xl shadow-sm overflow-hidden text-left">
+                                        <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
+                                            <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">Payment Invoice</h3>
+                                            <span className="text-xs text-gray-500 font-mono">#{Math.random().toString(36).substring(7).toUpperCase()}</span>
+                                        </div>
+                                        <div className="p-6 space-y-4">
+                                            <div className="flex justify-between border-b pb-2">
+                                                <span className="text-gray-500 text-sm">Vehicle:</span>
+                                                <span className="font-bold text-gray-900">{car.name}</span>
+                                            </div>
+                                            <div className="flex justify-between border-b pb-2">
+                                                <span className="text-gray-500 text-sm">Duration:</span>
+                                                <span className="font-medium text-gray-900">{diffDays} Days ({startDate} - {endDate})</span>
+                                            </div>
+                                            <div className="flex justify-between border-b pb-2">
+                                                <span className="text-gray-500 text-sm">Service:</span>
+                                                <span className="font-medium text-gray-900 capitalize">{rentalType.replace('-', ' ')} Mode</span>
+                                            </div>
+                                            <div className="space-y-2 pt-2">
+                                                <div className="flex justify-between text-xs text-gray-500">
+                                                    <span>Rental Fee (Rs. {dailyRate} × {diffDays})</span>
+                                                    <span>Rs. {dailyRate * diffDays}</span>
+                                                </div>
+                                                {rentalType === 'driver' && (
+                                                    <div className="flex justify-between text-xs text-gray-500">
+                                                        <span>Driver Fee (Rs. 1000 × {diffDays})</span>
+                                                        <span>Rs. {1000 * diffDays}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between text-lg font-black text-blue-600 pt-2 border-t">
+                                                    <span>Total Paid</span>
+                                                    <span>Rs. {totalAmount}</span>
+                                                </div>
+                                            </div>
+                                            <div className="pt-4 flex items-center gap-2 text-[10px] text-green-600 font-bold uppercase">
+                                                <CheckCircle className="w-3 h-3" />
+                                                Paid via eSewa
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 flex gap-4">
+                                        <button
+                                            onClick={() => window.print()}
+                                            className="px-6 py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
                                         >
-                                            <CreditCard className="w-5 h-5 text-gray-600" />
-                                            <span className="font-bold text-gray-800">Card</span>
-                                        </div>
+                                            <FileText className="w-4 h-4" />
+                                            Print Invoice
+                                        </button>
+                                        <button
+                                            onClick={() => navigate('/home')}
+                                            className="px-10 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-lg transform hover:-translate-y-1"
+                                        >
+                                            Done
+                                        </button>
                                     </div>
-
-                                    {paymentMethod === 'esewa' ? (
-                                        <div className="text-center py-6">
-                                            <p className="text-gray-600 mb-4">You will be redirected to eSewa to complete your payment securely.</p>
-                                            <div className="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-                                                Fast & Secure Connection
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-6">
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Cardholder Name</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Enter name as on card"
-                                                    value={cardHolderName}
-                                                    onChange={(e) => setCardHolderName(e.target.value)}
-                                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Card Number</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="#### #### #### ####"
-                                                    value={cardNumber}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 16);
-                                                        const matched = val.match(/.{1,4}/g);
-                                                        setCardNumber(matched ? matched.join(' ') : val);
-                                                    }}
-                                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono"
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-6">
-                                                <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Expiry Date</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="MM/YY"
-                                                        value={cardExpiry}
-                                                        onChange={(e) => {
-                                                            let val = e.target.value.replace(/\D/g, '');
-                                                            if (val.length > 4) val = val.slice(0, 4);
-                                                            if (val.length > 2) val = val.slice(0, 2) + '/' + val.slice(2);
-                                                            setCardExpiry(val);
-                                                        }}
-                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">CVV (SVC)</label>
-                                                    <input
-                                                        type="password"
-                                                        placeholder="***"
-                                                        maxLength={3}
-                                                        value={cvv}
-                                                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <p className="text-[10px] text-gray-400 italic">
-                                                SECURITY NOTE: This is a mock payment gateway. No real bank is used, and no sensitive card data is stored.
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
-                        )}
-
-                        {step === 6 && (
-                            <div className="h-full flex flex-col items-center justify-center text-center animate-in zoom-in duration-500 py-12">
-                                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 shadow-sm">
-                                    <CheckCircle className="w-12 h-12" />
-                                </div>
-                                <h2 className="text-3xl font-bold text-gray-900 mb-4">Booking Request Sent!</h2>
-                                {transactionDetails && (
-                                    <div className="mb-6 p-4 bg-green-50 rounded-xl border border-green-100 text-sm">
-                                        <p className="font-bold text-green-800 mb-1">Payment Verified</p>
-                                        <p className="text-green-600">Transaction ID: {transactionDetails.transactionId}</p>
-                                        <p className="text-green-600">Card used: **** **** **** {transactionDetails.last4Digits}</p>
-                                    </div>
-                                )}
-                                <p className="text-gray-600 max-w-lg mx-auto text-lg leading-relaxed">
-                                    Your request for the <strong>{car.name}</strong> has been successfully submitted. We will review your documents and send a confirmation shortly.
-                                </p>
-                                <button
-                                    onClick={() => navigate('/fleet')}
-                                    className="mt-10 px-10 py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                                >
-                                    Return to Fleet
-                                </button>
-                            </div>
-                        )}
+                            );
+                        })()}
                     </div>
                 </div>
 

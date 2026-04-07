@@ -12,7 +12,8 @@ const Cars: React.FC = () => {
     const [editingCar, setEditingCar] = useState<any>(null);
     const [formData, setFormData] = useState({
         name: '', type: '', price: '', priceType: 'Daily Rate',
-        seats: '', petrol: '', automatic: false, image: '', rating: '5.0'
+        seats: '', petrol: '', automatic: false, image: '', rating: '5.0',
+        isAvailable: true
     });
 
     useEffect(() => {
@@ -72,7 +73,8 @@ const Cars: React.FC = () => {
         setEditingCar(null);
         setFormData({
             name: '', type: '', price: '', priceType: 'Daily Rate',
-            seats: '', petrol: '', automatic: false, image: '', rating: '5.0'
+            seats: '', petrol: '', automatic: false, image: '', rating: '5.0',
+            isAvailable: true
         });
     };
 
@@ -80,7 +82,8 @@ const Cars: React.FC = () => {
         setEditingCar(car);
         setFormData({
             name: car.name, type: car.type, price: car.price, priceType: car.priceType,
-            seats: car.seats, petrol: car.petrol, automatic: car.automatic, image: car.image, rating: car.rating
+            seats: car.seats, petrol: car.petrol, automatic: car.automatic, image: car.image, rating: car.rating,
+            isAvailable: car.isAvailable !== undefined ? car.isAvailable : true
         });
         setIsModalOpen(true);
     };
@@ -118,6 +121,9 @@ const Cars: React.FC = () => {
                             <img src={car.image} alt={car.name} className="w-full h-full object-cover" />
                             <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-md text-xs font-bold shadow-sm">
                                 {car.rating} ★
+                            </div>
+                            <div className={`absolute top-2 left-2 px-2 py-1 rounded-md text-[10px] font-bold shadow-sm ${car.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {car.isAvailable ? 'AVAILABLE' : 'BOOKED'}
                             </div>
                         </div>
                         <div className="p-4">
@@ -171,6 +177,10 @@ const Cars: React.FC = () => {
                                 <label className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer">
                                     <input type="checkbox" checked={formData.automatic} onChange={e => setFormData({ ...formData, automatic: e.target.checked })} />
                                     <span className="text-sm">Auto</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer bg-gray-50">
+                                    <input type="checkbox" checked={formData.isAvailable} onChange={e => setFormData({ ...formData, isAvailable: e.target.checked })} />
+                                    <span className="text-sm">Available</span>
                                 </label>
                             </div>
                             <input placeholder="Image URL" className="w-full p-2 border rounded-lg" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} required />

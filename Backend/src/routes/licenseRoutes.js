@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const { connectDB } = require("../config/db");
+const { getDB } = require("../config/db");
 
 // Check license validity (Mock Govt API)
 router.get("/check/:licenseNumber", async (req, res) => {
   try {
     const { licenseNumber } = req.params;
-    const db = await connectDB();
+    const db = getDB();
+
 
     const license = await db
       .collection("licenses")

@@ -38,10 +38,11 @@ const Users: React.FC = () => {
         }
     };
 
-    const filteredUsers = users.filter(user =>
-        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredUsers = users.filter(user => {
+        const name = user.fullName || user.name || '';
+        return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     return (
         <div>
@@ -80,10 +81,10 @@ const Users: React.FC = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-                                                {user.name ? user.name[0].toUpperCase() : <User size={20} />}
+                                                {(user.fullName || user.name) ? (user.fullName || user.name)[0].toUpperCase() : <User size={20} />}
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-gray-900">{user.name || 'N/A'}</p>
+                                                <p className="font-semibold text-gray-900">{user.fullName || user.name || 'N/A'}</p>
                                                 <div className="flex items-center gap-1 text-xs text-gray-500">
                                                     <Mail size={12} /> {user.email}
                                                 </div>

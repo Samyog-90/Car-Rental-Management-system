@@ -3,6 +3,6 @@ const router = express.Router();
 const paymentController = require('../controllers/paymentController');
 
 router.post('/esewa-config', paymentController.getEsewaConfig);
-router.post('/mock-card-pay', paymentController.mockCardPay);
+router.post('/verify-esewa', paymentController.verifyEsewaPay);
 
 module.exports = router;

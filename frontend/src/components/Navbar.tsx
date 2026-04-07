@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { User } from 'lucide-react';
 
 const Navbar: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const isLoggedIn = !!localStorage.getItem('token');
+    const isLoggedIn = !!localStorage.getItem('token') || !!localStorage.getItem('adminToken');
+
 
     const handleNavigation = (path: string) => {
         navigate(path);
@@ -70,8 +71,8 @@ const Navbar: React.FC = () => {
                                 onClick={() => handleNavigation('/profile')}
                                 className="px-4 py-2 sm:px-6 bg-gray-900 text-white border-2 border-gray-900 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors flex items-center gap-2 text-sm sm:text-base"
                             >
-                                <Users className="w-4 h-4" />
-                                <span className="hidden sm:inline">Profile</span>
+                                <User className="w-4 h-4" />
+                                <span className="hidden sm:inline">User Profile</span>
                             </button>
                         ) : (
                             <button
