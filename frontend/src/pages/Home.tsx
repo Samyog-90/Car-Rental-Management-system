@@ -255,7 +255,20 @@ const Home: React.FC = () => {
                                 <div className="p-6">
                                     <h3 className="text-xl font-bold text-gray-900 mb-2">{car.name}</h3>
                                     <p className="text-2xl font-bold text-blue-600 mb-4">{car.price}</p>
-                                    <button className="w-full py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
+                                    <button 
+                                        onClick={() => navigate('/booking', { 
+                                            state: { 
+                                                car,
+                                                prefilledData: {
+                                                    startDate,
+                                                    endDate,
+                                                    location,
+                                                    rentalType: hireDriver === 'yes' ? 'driver' : 'self'
+                                                }
+                                            } 
+                                        })}
+                                        className="w-full py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                                    >
                                         Book Now
                                     </button>
                                 </div>

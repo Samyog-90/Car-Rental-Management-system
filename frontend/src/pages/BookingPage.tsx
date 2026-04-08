@@ -34,6 +34,26 @@ const BookingPage: React.FC = () => {
 
     const [paymentMethod] = useState<'esewa'>('esewa');
 
+    // Calculate Total Price (Rate * Days + Driver Fee)
+    const calculateTotal = () => {
+        const defaultValues = { totalAmount: 0, diffDays: 0, dailyRate: 0, driverFeePerDay: 0 };
+        if (!startDate || !endDate || !car) return defaultValues;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+        const dailyRate = parseFloat(String(car?.price).replace(/[^0-9.]/g, '')) || 0;
+        const driverFeePerDay = rentalType === 'driver' ? 1000 : 0;
+        return {
+            totalAmount: (dailyRate + driverFeePerDay) * diffDays,
+            diffDays,
+            dailyRate,
+            driverFeePerDay
+        };
+    };
+
+    const { totalAmount, diffDays, dailyRate, driverFeePerDay } = calculateTotal();
+
     useEffect(() => {
         if (!car) {
             navigate('/fleet');
@@ -136,15 +156,7 @@ const BookingPage: React.FC = () => {
 
             formData.append('paymentStatus', isEsewa ? 'Pending' : 'Completed');
 
-            // Calculate Total Price (Rate * Days + Driver Fee)
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            const diffTime = Math.abs(end.getTime() - start.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-            const dailyRate = parseFloat(String(car?.price).replace(/[^0-9.]/g, '')) || 0;
-            const driverFeePerDay = rentalType === 'driver' ? 1000 : 0;
-            const totalAmount = (dailyRate + driverFeePerDay) * diffDays;
-
+            // Use the calculated total price
             formData.append('totalPrice', String(totalAmount));
 
             const response = await axios.post('http://localhost:5000/api/bookings', formData, {
@@ -586,16 +598,7 @@ const BookingPage: React.FC = () => {
                             </div>
                         )}
 
-                        {step === 4 && (() => {
-                            const start = new Date(startDate);
-                            const end = new Date(endDate);
-                            const diffTime = Math.abs(end.getTime() - start.getTime());
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-                            const dailyRate = parseFloat(String(car.price).replace(/[^0-9.]/g, '')) || 0;
-                            const driverFeePerDay = rentalType === 'driver' ? 1000 : 0;
-                            const totalAmount = (dailyRate + driverFeePerDay) * diffDays;
-
-                            return (
+                        {step === 4 && (
                                 <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
                                     <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                                         <CheckCircle className="w-8 h-8 text-blue-600" />
@@ -637,7 +640,7 @@ const BookingPage: React.FC = () => {
                                             {rentalType === 'driver' && (
                                                 <div className="flex justify-between items-center pt-2 text-sm">
                                                     <span className="text-gray-500">Driver Fee:</span>
-                                                    <span className="font-medium text-gray-900">Rs. 1000 / day</span>
+                                                    <span className="font-medium text-gray-900">Rs. {driverFeePerDay} / day</span>
                                                 </div>
                                             )}
                                             <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
@@ -707,8 +710,7 @@ const BookingPage: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                            );
-                        })()}
+                            )}
 
                         {step === 5 && (
                             <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
@@ -719,7 +721,7 @@ const BookingPage: React.FC = () => {
                                 <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8">
                                     <div className="flex justify-between items-center mb-8 pb-8 border-b border-gray-200">
                                         <span className="text-gray-600 font-medium">Total Amount Due</span>
-                                        <span className="text-4xl font-bold text-gray-900">{car.price}</span>
+                                        <span className="text-4xl font-bold text-gray-900">Rs. {totalAmount}</span>
                                     </div>
 
                                     {/* Payment Method Selector */}
@@ -742,16 +744,7 @@ const BookingPage: React.FC = () => {
                             </div>
                         )}
 
-                        {step === 6 && (() => {
-                            const start = new Date(startDate);
-                            const end = new Date(endDate);
-                            const diffTime = Math.abs(end.getTime() - start.getTime());
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-                            const dailyRate = parseFloat(String(car.price).replace(/[^0-9.]/g, '')) || 0;
-                            const driverFeePerDay = rentalType === 'driver' ? 1000 : 0;
-                            const totalAmount = (dailyRate + driverFeePerDay) * diffDays;
-
-                            return (
+                        {step === 6 && (
                                 <div className="h-full flex flex-col items-center animate-in zoom-in duration-500 py-6">
                                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 shadow-sm">
                                         <CheckCircle className="w-10 h-10" />
@@ -785,8 +778,8 @@ const BookingPage: React.FC = () => {
                                                 </div>
                                                 {rentalType === 'driver' && (
                                                     <div className="flex justify-between text-xs text-gray-500">
-                                                        <span>Driver Fee (Rs. 1000 × {diffDays})</span>
-                                                        <span>Rs. {1000 * diffDays}</span>
+                                                        <span>Driver Fee (Rs. {driverFeePerDay} × {diffDays})</span>
+                                                        <span>Rs. {driverFeePerDay * diffDays}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex justify-between text-lg font-black text-blue-600 pt-2 border-t">
@@ -817,8 +810,7 @@ const BookingPage: React.FC = () => {
                                         </button>
                                     </div>
                                 </div>
-                            );
-                        })()}
+                            )}
                     </div>
                 </div>
 

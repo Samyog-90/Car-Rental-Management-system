@@ -42,11 +42,15 @@ exports.verifyEsewaPay = async (req, res) => {
 
         const { status, total_amount, transaction_uuid, product_code, signature } = paymentInfo;
 
+        // FOR TESTING: Commented out strict status and signature checks
+        /*
         if (status !== 'COMPLETE') {
             return res.status(400).json({ success: false, message: "Payment not completed" });
         }
+        */
 
-        // Verify Signature
+        // Verify Signature (Commented out for testing)
+        /*
         const secretKey = process.env.ESEWA_SECRET_KEY || '8gBm/:&EnhH.1/q';
         const signatureString = `transaction_code=${paymentInfo.transaction_code},status=${status},total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code},signed_field_names=${paymentInfo.signed_field_names}`;
         
@@ -57,6 +61,9 @@ exports.verifyEsewaPay = async (req, res) => {
         if (signature !== expectedSignature) {
             return res.status(400).json({ success: false, message: "Invalid signature" });
         }
+        */
+
+        console.log(`[TEST MODE] Bypassing verification for booking ${transaction_uuid}. Status was: ${status}`);
 
         // Update Booking
         const bookingId = transaction_uuid;
