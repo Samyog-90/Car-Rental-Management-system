@@ -34,14 +34,16 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.collection().findOne({ email });
+        const user = await User.collection().findOne({ 
+            email: { $regex: new RegExp(`^${email}$`, "i") } 
+        });
         if (!user) {
-            return res.status(400).json({ message: "Invalid credentials" });
+            return res.status(400).json({ message: "Debug: User not found" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials" });
+            return res.status(400).json({ message: "Debug: Password mismatch" });
         }
 
         const token = jwt.sign(
@@ -111,6 +113,33 @@ exports.changePassword = async (req, res) => {
         );
 
         res.json({ message: "Password updated successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+exports.getNotifications = async (req, res) => {
+    try {
+        const Notification = require("../models/Notification");
+        const notifications = await Notification.collection()
+            .find({ userId: req.user.id })
+            .sort({ createdAt: -1 })
+            .toArray();
+        res.json(notifications);
+    } catch (error) {
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+exports.markNotificationRead = async (req, res) => {
+    try {
+        const Notification = require("../models/Notification");
+        const { id } = req.params;
+        await Notification.collection().updateOne(
+            { _id: new ObjectId(id), userId: req.user.id },
+            { $set: { read: true } }
+        );
+        res.json({ message: "Notification marked as read" });
     } catch (error) {
         res.status(500).json({ message: "Server Error" });
     }

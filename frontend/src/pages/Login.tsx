@@ -18,40 +18,25 @@ const DriveFlowLogin: React.FC = () => {
             });
 
             if (response.data.token) {
+                const user = response.data.user;
                 localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                // Clear admin tokens to prevent profile confusion
-                localStorage.removeItem('adminToken');
-                localStorage.removeItem('adminUser');
-                navigate('/home');
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                // If the user happens to have an admin role, also allow admin access 
+                // without needing a separate login step
+                if (user.role === 'admin') {
+                    localStorage.setItem('adminToken', response.data.token);
+                    localStorage.setItem('adminUser', JSON.stringify(user));
+                    navigate('/admin');
+                } else {
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('adminUser');
+                    navigate('/home');
+                }
                 return;
             }
         } catch (userErr: any) {
-            // 2. If User Login fails, Try Admin Login
-            console.log("User login failed, trying admin...", userErr.response?.data?.message);
-
-            try {
-                const adminResponse = await axios.post('http://localhost:5000/api/admin/login', {
-                    email,
-                    password
-                });
-
-                if (adminResponse.data.token) {
-                    localStorage.setItem('adminToken', adminResponse.data.token);
-                    localStorage.setItem('adminUser', JSON.stringify(adminResponse.data.admin));
-                    // Clear user tokens to prevent profile confusion
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    navigate('/admin');
-                    return;
-                }
-            } catch (adminErr: any) {
-                console.error("Admin login failed", adminErr);
-                // 3. If both fail, show error
-                // Prefer the error message from the first attempt if it's "Invalid credentials" type, 
-                // or just a generic "Invalid email or password"
-                setError('Invalid email or password');
-            }
+            setError(userErr.response?.data?.message || 'Invalid email or password');
         }
     };
 

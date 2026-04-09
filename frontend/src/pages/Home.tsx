@@ -141,7 +141,11 @@ const Home: React.FC = () => {
                                 <input
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    onChange={(e) => {
+                                        setStartDate(e.target.value);
+                                        if (endDate && e.target.value > endDate) setEndDate('');
+                                    }}
                                     className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
                             </div>
@@ -153,6 +157,7 @@ const Home: React.FC = () => {
                                 <input
                                     type="date"
                                     value={endDate}
+                                    min={startDate || new Date().toISOString().split('T')[0]}
                                     onChange={(e) => setEndDate(e.target.value)}
                                     className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />

@@ -8,7 +8,13 @@ const BookingPage: React.FC = () => {
     const locationHook = useLocation();
     const car = locationHook.state?.car;
 
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(() => {
+        const prefilled = locationHook.state?.prefilledData;
+        if (prefilled?.startDate && prefilled?.endDate && prefilled?.location) {
+            return prefilled.rentalType === 'driver' ? 3 : 2;
+        }
+        return 1;
+    });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -67,19 +73,48 @@ const BookingPage: React.FC = () => {
             if (prefilled.endDate) setEndDate(prefilled.endDate);
             if (prefilled.location) setLocation(prefilled.location);
             if (prefilled.rentalType) setRentalType(prefilled.rentalType);
-
-            // Skip step 1 if all required fields are pre-filled
-            if (prefilled.startDate && prefilled.endDate && prefilled.location) {
-                setStep(prefilled.rentalType === 'driver' ? 3 : 2);
-            }
         }
     }, [car, navigate, locationHook.state]);
 
     const handleVerifyLicense = async () => {
-        if (!licenseNumber) return;
+        if (!licenseNumber || !licenseFront) {
+            setError('Please enter license number and upload the front image first.');
+            return;
+        }
         setLicenseStatus('verifying');
         setError(null);
         try {
+            // 1. OCR Verification
+            const ocrFormData = new FormData();
+            ocrFormData.append('documentImage', licenseFront);
+            ocrFormData.append('docType', 'LICENSE_FRONT');
+
+            const ocrRes = await axios.post('http://localhost:5000/api/ocr/process', ocrFormData);
+            const { licenseNumber: extractedNumber, fullName: extractedName } = ocrRes.data.extractedData?.fields || {};
+
+            if (extractedNumber) {
+                const normExtracted = extractedNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                const normInput = licenseNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+                if (normExtracted !== normInput && !normExtracted.includes(normInput) && !normInput.includes(normExtracted)) {
+                    setLicenseStatus('invalid');
+                    setError(`ID Mismatch! Image contains number "${extractedNumber}" but you entered "${licenseNumber}".`);
+                    return;
+                }
+            }
+
+            if (extractedName && licenseName) {
+                const normExtractedName = extractedName.toLowerCase().trim();
+                const normInputName = licenseName.toLowerCase().trim();
+                // Check for significant overlap to avoid OCR noise issues
+                if (!normExtractedName.includes(normInputName) && !normInputName.includes(normExtractedName)) {
+                    setLicenseStatus('invalid');
+                    setError(`Name Mismatch! Image contains name "${extractedName}" but you entered "${licenseName}".`);
+                    return;
+                }
+            }
+
+            // 2. Database Verification
             const response = await axios.get(`http://localhost:5000/api/gov/license/check/${licenseNumber}`);
             if (response.data.valid) {
                 setLicenseStatus('valid');
@@ -90,15 +125,48 @@ const BookingPage: React.FC = () => {
             }
         } catch (err: any) {
             setLicenseStatus('invalid');
-            setError(err.response?.data?.message || 'Failed to verify license. Make sure records exist.');
+            setError(err.response?.data?.message || 'Failed to verify license.');
         }
     };
 
     const handleVerifyNID = async () => {
-        if (!nidNumber) return;
+        if (!nidNumber || !nidFront) {
+            setError('Please enter NID number and upload the front image first.');
+            return;
+        }
         setNidStatus('verifying');
         setError(null);
         try {
+            // 1. OCR Verification
+            const ocrFormData = new FormData();
+            ocrFormData.append('documentImage', nidFront);
+            ocrFormData.append('docType', 'NID_FRONT');
+
+            const ocrRes = await axios.post('http://localhost:5000/api/ocr/process', ocrFormData);
+            const { nidNumber: extractedNumber, fullName: extractedName } = ocrRes.data.extractedData?.fields || {};
+
+            if (extractedNumber) {
+                const normExtracted = extractedNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                const normInput = nidNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+                if (normExtracted !== normInput && !normExtracted.includes(normInput) && !normInput.includes(normExtracted)) {
+                    setNidStatus('invalid');
+                    setError(`NID Mismatch! Image contains number "${extractedNumber}" but you entered "${nidNumber}".`);
+                    return;
+                }
+            }
+
+            if (extractedName && nidName) {
+                const normExtractedName = extractedName.toLowerCase().trim();
+                const normInputName = nidName.toLowerCase().trim();
+                if (!normExtractedName.includes(normInputName) && !normInputName.includes(normExtractedName)) {
+                    setNidStatus('invalid');
+                    setError(`Name Mismatch! Image contains name "${extractedName}" but you entered "${nidName}".`);
+                    return;
+                }
+            }
+
+            // 2. Database Verification
             const response = await axios.get(`http://localhost:5000/api/gov/nid/check/${nidNumber}`);
             if (response.data.valid) {
                 setNidStatus('valid');
@@ -109,7 +177,7 @@ const BookingPage: React.FC = () => {
             }
         } catch (err: any) {
             setNidStatus('invalid');
-            setError(err.response?.data?.message || 'Failed to verify National ID. Make sure records exist.');
+            setError(err.response?.data?.message || 'Failed to verify National ID.');
         }
     };
 
@@ -162,7 +230,7 @@ const BookingPage: React.FC = () => {
             const response = await axios.post('http://localhost:5000/api/bookings', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('adminToken')}`
                 }
             });
 
@@ -340,7 +408,11 @@ const BookingPage: React.FC = () => {
                                         <input
                                             type="date"
                                             value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
+                                            min={new Date().toISOString().split('T')[0]}
+                                            onChange={(e) => {
+                                                setStartDate(e.target.value);
+                                                if (endDate && e.target.value > endDate) setEndDate('');
+                                            }}
                                             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                         />
                                     </div>
@@ -349,6 +421,7 @@ const BookingPage: React.FC = () => {
                                         <input
                                             type="date"
                                             value={endDate}
+                                            min={startDate || new Date().toISOString().split('T')[0]}
                                             onChange={(e) => setEndDate(e.target.value)}
                                             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                         />

@@ -11,6 +11,7 @@ import Contact from './pages/Contact';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailure from './pages/PaymentFailure';
 import UserProfile from './pages/UserProfile';
+import InvoiceDetail from './pages/InvoiceDetail';
 
 // Admin imports (placeholders for now until file creation)
 import AdminLogin from './pages/admin/AdminLogin';
@@ -34,6 +35,7 @@ const App: React.FC = () => {
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/payment/success" element={<PaymentSuccess />} />
       <Route path="/payment/failure" element={<PaymentFailure />} />
+      <Route path="/invoice/:id" element={<InvoiceDetail />} />
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />

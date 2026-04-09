@@ -6,7 +6,7 @@ const authMiddleware = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/uploadMiddleware");
 
 // Public or User route
-router.post("/", upload.fields([
+router.post("/", authMiddleware, upload.fields([
     { name: 'licenseFront', maxCount: 1 },
     { name: 'licenseBack', maxCount: 1 },
     { name: 'nidFront', maxCount: 1 },

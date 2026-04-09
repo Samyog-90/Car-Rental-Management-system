@@ -6,19 +6,23 @@ exports.adminLogin = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const admin = await Admin.collection().findOne({ email });
+    const User = require("../models/User");
+    const user = await User.collection().findOne({ 
+      email: { $regex: new RegExp(`^${email}$`, "i") }, 
+      role: "admin" 
+    });
 
-    if (!admin || !admin.isActive) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials or not an admin" });
     }
 
-    const isMatch = await bcrypt.compare(password, admin.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
-      { id: admin._id, role: admin.role },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET || "secret_key",
       { expiresIn: "1d" }
     );
@@ -27,9 +31,9 @@ exports.adminLogin = async (req, res) => {
       message: "Admin login successful",
       token,
       admin: {
-        id: admin._id,
-        name: admin.name,
-        role: admin.role
+        id: user._id,
+        name: user.fullName,
+        role: user.role
       }
     });
 
@@ -131,8 +135,9 @@ exports.deleteUser = async (req, res) => {
 exports.getAdminProfile = async (req, res) => {
   try {
     const { ObjectId } = require("mongodb");
-    const admin = await Admin.collection().findOne(
-      { _id: new ObjectId(req.admin.id) },
+    const User = require("../models/User");
+    const admin = await User.collection().findOne(
+      { _id: new ObjectId(req.admin.id), role: 'admin' },
       { projection: { password: 0 } }
     );
     if (!admin) return res.status(404).json({ message: "Admin not found" });
@@ -147,7 +152,8 @@ exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const { ObjectId } = require("mongodb");
-    const admin = await Admin.collection().findOne({ _id: new ObjectId(req.admin.id) });
+    const User = require("../models/User");
+    const admin = await User.collection().findOne({ _id: new ObjectId(req.admin.id), role: 'admin' });
 
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
@@ -157,7 +163,7 @@ exports.changePassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await Admin.collection().updateOne(
+    await User.collection().updateOne(
       { _id: new ObjectId(req.admin.id) },
       { $set: { password: hashedPassword } }
     );

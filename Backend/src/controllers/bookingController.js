@@ -13,6 +13,9 @@ exports.getAllBookings = async (req, res) => {
 exports.createBooking = async (req, res) => {
     try {
         const bookingData = { ...req.body };
+        if (req.user) {
+            bookingData.userId = req.user.id;
+        }
 
         // Add file paths if they exist
         if (req.files) {
@@ -46,6 +49,22 @@ exports.updateBookingStatus = async (req, res) => {
         );
 
         if (result.matchedCount === 0) return res.status(404).json({ message: "Booking not found" });
+
+        // Create Notification if Approved
+        if (status === "Approved") {
+            const notificationModel = require("../models/Notification");
+            const booking = await Booking.collection().findOne({ _id: new ObjectId(id) });
+            if (booking && booking.userId) {
+                await notificationModel.collection().insertOne({
+                    userId: booking.userId,
+                    bookingId: id,
+                    message: `Your booking for ${booking.carName} has been approved! The car is on its way.`,
+                    type: "approval",
+                    read: false,
+                    createdAt: new Date()
+                });
+            }
+        }
 
         res.json({ message: `Booking marked as ${status}` });
     } catch (err) {

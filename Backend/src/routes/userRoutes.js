@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { getDB } = require("../config/db");
 const authMiddleware = require("../middlewares/authMiddleware");
-const { register, login, getProfile, updateProfile, changePassword } = require("../controllers/userController");
+const { register, login, getProfile, updateProfile, changePassword, getNotifications, markNotificationRead } = require("../controllers/userController");
 
 router.post("/register", register);
 router.post("/login", login);
@@ -11,6 +11,10 @@ router.post("/login", login);
 router.get("/profile", authMiddleware, getProfile);
 router.put("/profile", authMiddleware, updateProfile);
 router.put("/change-password", authMiddleware, changePassword);
+
+// Notification Routes
+router.get("/notifications", authMiddleware, getNotifications);
+router.put("/notifications/:id/read", authMiddleware, markNotificationRead);
 
 // GET all users
 router.get("/", async (req, res) => {

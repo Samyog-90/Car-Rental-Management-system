@@ -80,7 +80,7 @@ const parseOCRText = (text, forcedType) => {
   if (type === "LICENSE_FRONT") {
     result.fields = {
       fullName: extractPattern(text, /Name[:\s]+([A-Z\s]+)/i),
-      licenseNumber: extractPattern(text, /License\s*No[:\s]*([A-Z0-9-]+)/i),
+      licenseNumber: extractPattern(text, /License\s*No[:\s]*([A-Z0-9\-\s]+)/i),
       dob: extractPattern(text, /DOB[:\s]*([\d\-\/]+)/i),
       issueDate: extractPattern(text, /Issue[:\s]*([\d\-\/]+)/i),
       expiryDate: extractPattern(text, /Expiry[:\s]*([\d\-\/]+)/i)
@@ -95,7 +95,7 @@ const parseOCRText = (text, forcedType) => {
     // NID Front: Full Name, NID Number, DOB, Gender
     result.fields = {
       fullName: extractPattern(text, /Name[:\s]+([A-Z\s]+)/i),
-      nidNumber: extractPattern(text, /ID\s*No[:\s]*([\d\s]+)/i),
+      nidNumber: extractPattern(text, /ID\s*No[:\s]*([0-9\-\s]+)/i),
       dob: extractPattern(text, /DOB[:\s]*([\d\-\/]+)/i),
       gender: extractPattern(text, /Gender[:\s]*([MF])/i)
     };
@@ -112,6 +112,20 @@ const parseOCRText = (text, forcedType) => {
       // Find longest uppercase line starting with something alphabetical
       const capitalizedLines = lines.filter(l => /^[A-Z\s]{5,}$/.test(l));
       if (capitalizedLines.length > 0) result.fields.fullName = capitalizedLines[0];
+  }
+
+  // Fallback for License Number (usually a mix of letters, numbers, and dashes)
+  if (type === "LICENSE_FRONT" && !result.fields.licenseNumber) {
+    const licensePattern = /[A-Z0-9]{2,4}-[A-Z0-9]{4,}/g; // e.g. 01-06-L-1234
+    const matches = text.match(licensePattern);
+    if (matches) result.fields.licenseNumber = matches[0];
+  }
+
+  // Fallback for NID Number (usually a series of digits)
+  if (type === "NID_FRONT" && !result.fields.nidNumber) {
+    const nidPattern = /\b\d{4,}[\-\s]?\d{4,}[\-\s]?\d{4,}\b/g; 
+    const matches = text.match(nidPattern);
+    if (matches) result.fields.nidNumber = matches[0];
   }
 
   return result;

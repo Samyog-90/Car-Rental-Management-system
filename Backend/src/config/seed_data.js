@@ -4,11 +4,13 @@ const bcrypt = require("bcryptjs");
 const seedData = async () => {
     try {
         const db = getDB();
+        const usersCollection = db.collection("users");
 
         // Seed Licenses
         const licensesCollection = db.collection("licenses");
         const licenses = [
             { licenseNumber: "01-01-00123445", status: "VALID", holderName: "Ram Bahadur Thapa", expiryDate: "2030-12-31" },
+            { licenseNumber: "DL-NEP-100004", status: "VALID", holderName: "Prakash Sharma", expiryDate: "2035-04-12" },
             { licenseNumber: "02-05-99887766", status: "VALID", holderName: "Sita Kumari Sharma", expiryDate: "2028-05-15" },
             { licenseNumber: "03-08-55443322", status: "EXPIRED", holderName: "Hari Krishna Shrestha", expiryDate: "2023-01-01" },
             { licenseNumber: "04-12-11223344", status: "VALID", holderName: "Gopal Prasad Gurung", expiryDate: "2029-11-22" },
@@ -103,26 +105,27 @@ const seedData = async () => {
             console.log("✅ Mock Cars Seeded");
         }
 
-        // Seed Admin
-        const adminsCollection = db.collection("admins");
+        // Seed Admin in Users collection
         const adminEmail = "admin@example.com";
-        const existingAdmin = await adminsCollection.findOne({ email: adminEmail });
-        if (!existingAdmin) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash("admin123", salt);
-            await adminsCollection.insertOne({
-                name: "Super Admin",
-                email: adminEmail,
-                password: hashedPassword,
-                role: 'admin',
-                isActive: true,
-                createdAt: new Date()
-            });
-            console.log("✅ Admin Seeded (admin@example.com / admin123)");
-        }
+        const salt = await bcrypt.genSalt(10);
+        const adminPassword = await bcrypt.hash("admin123", salt);
+        
+        await usersCollection.updateOne(
+            { email: adminEmail },
+            { 
+                $set: { 
+                    fullName: "System Administrator",
+                    password: adminPassword,
+                    role: 'admin',
+                    updatedAt: new Date()
+                },
+                $setOnInsert: { createdAt: new Date() }
+            },
+            { upsert: true }
+        );
+        console.log("✅ Admin Synchronized in Users collection (admin@example.com / admin123)");
 
-        // Seed User
-        const usersCollection = db.collection("users");
+        // Seed Regular User
         const userEmail = "user@example.com";
         const existingUser = await usersCollection.findOne({ email: userEmail });
         if (!existingUser) {
@@ -135,9 +138,8 @@ const seedData = async () => {
                 role: 'user',
                 createdAt: new Date()
             });
-            console.log("✅ User Seeded (user@example.com / user123)");
+            console.log("✅ Regular User Seeded (user@example.com / user123)");
         }
-
     } catch (error) {
         console.error("Seeding failed:", error);
     }
