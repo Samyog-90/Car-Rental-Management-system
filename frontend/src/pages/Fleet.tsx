@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Star, Users, Fuel, Settings, CheckCircle } from 'lucide-react';
+import { Star, Users, Fuel, Settings, CheckCircle, Search } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -18,6 +18,7 @@ const FleetPage: React.FC = () => {
     } | null;
 
     const [vehicles, setVehicles] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const fetchCars = async () => {
@@ -34,15 +35,24 @@ const FleetPage: React.FC = () => {
     }, []);
 
     const displayVehicles = useMemo(() => {
-        if (!state?.recommendation) return vehicles;
-        return [...vehicles].sort((a, b) => {
+        let filtered = vehicles;
+        if (searchTerm) {
+            filtered = vehicles.filter(v => 
+                v.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                v.type.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (!state?.recommendation) return filtered;
+
+        return [...filtered].sort((a, b) => {
             const aMatch = a.type === state.recommendation;
             const bMatch = b.type === state.recommendation;
             if (aMatch && !bMatch) return -1;
             if (!aMatch && bMatch) return 1;
             return 0;
         });
-    }, [vehicles, state?.recommendation]);
+    }, [vehicles, state?.recommendation, searchTerm]);
 
     const handleBookNow = (car: any) => {
         navigate('/booking', { 
@@ -71,12 +81,24 @@ const FleetPage: React.FC = () => {
             
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
                 
-                <div className="mb-8 sm:mb-12">
-                    <div className="inline-block px-4 sm:px-6 py-2 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-4">
-                        Corporate Catalog
+                <div className="mb-8 sm:mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+                    <div>
+                        <div className="inline-block px-4 sm:px-6 py-2 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-4">
+                            Corporate Catalog
+                        </div>
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-4">PREMIUM FLEET</h1>
+                        <p className="text-gray-600 text-base sm:text-lg">Browse Our Standardized Collection Of Premium Vehicles.</p>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-4">PREMIUM FLEET</h1>
-                    <p className="text-gray-600 text-base sm:text-lg">Browse Our Standardized Collection Of Premium Vehicles.</p>
+                    <div className="w-full sm:w-auto relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                            type="text"
+                            placeholder="Search cars by name or type..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full sm:w-80 pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                        />
+                    </div>
                 </div>
 
                 {/* Recommendation Banner */}

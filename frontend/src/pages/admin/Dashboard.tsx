@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Car, Users, CalendarCheck, DollarSign, TrendingUp, Activity } from 'lucide-react';
+import { Car, Users, CalendarCheck, DollarSign, TrendingUp, Activity, Clock } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Dashboard: React.FC = () => {
     const [stats, setStats] = useState({
         totalCars: 0,
         activeBookings: 0,
         totalUsers: 0,
-        totalRevenue: 'Rs. 0'
+        totalRevenue: 'Rs. 0',
+        chartData: [] as {name: string, revenue: number}[],
+        recentActivity: [] as {message: string, time: string}[]
     });
     const [loading, setLoading] = useState(true);
 
@@ -84,8 +87,15 @@ const Dashboard: React.FC = () => {
                             <option>This Year</option>
                         </select>
                     </div>
-                    <div className="h-64 bg-gray-50 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-200">
-                        <p className="text-gray-400">Analytics Chart Placeholder</p>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `Rs.${value}`} />
+                                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
@@ -93,15 +103,22 @@ const Dashboard: React.FC = () => {
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h3>
                     <div className="space-y-6">
-                        {[1, 2, 3].map((_, i) => (
-                            <div key={i} className="flex gap-4 items-start">
-                                <div className="w-2 h-2 mt-2 bg-blue-500 rounded-full shrink-0"></div>
-                                <div>
-                                    <p className="text-sm text-gray-900 font-medium">New booking received</p>
-                                    <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
+                        {stats.recentActivity.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No recent activities.</p>
+                        ) : (
+                            stats.recentActivity.map((activity, i) => (
+                                <div key={i} className="flex gap-4 items-start">
+                                    <div className="w-2 h-2 mt-2 bg-blue-500 rounded-full shrink-0"></div>
+                                    <div>
+                                        <p className="text-sm text-gray-900 font-medium">{activity.message}</p>
+                                        <div className="flex items-center text-xs text-gray-500 mt-1 whitespace-nowrap">
+                                            <Clock size={12} className="mr-1" />
+                                            {new Date(activity.time).toLocaleString()}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </div>

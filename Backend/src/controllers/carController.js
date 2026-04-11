@@ -38,6 +38,13 @@ exports.updateCar = async (req, res) => {
         // Remove _id from update body if present to avoid immutable field error
         delete updatedCar._id;
 
+        // Reset the booking count to 0 if the admin is making
+        // the car manually available again
+        if (updatedCar.isAvailable === true || updatedCar.isAvailable === "true") {
+            updatedCar.bookingCount = 0;
+            updatedCar.isAvailable = true;
+        }
+
         const result = await Car.collection().updateOne(
             { _id: new ObjectId(id) },
             { $set: updatedCar }

@@ -4,7 +4,7 @@ import { User, Lock, Save, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import DocumentOCR from '../components/DocumentOCR';
+
 
 const UserProfile: React.FC = () => {
     const navigate = useNavigate();
@@ -191,59 +191,7 @@ const UserProfile: React.FC = () => {
                         </form>
                     </div>
 
-                    {/* Document Verification Section */}
-                    <div className="bg-white rounded-2xl shadow-sm p-8 space-y-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <span className="bg-blue-100 p-2 rounded-lg"><Save className="w-5 h-5 text-blue-600" /></span>
-                            Document Verification (OCR)
-                        </h2>
-                        
-                        <div className="grid grid-cols-1 gap-8">
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-700">Driving License</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <DocumentOCR 
-                                        title="License Front" 
-                                        docType="LICENSE_FRONT"
-                                        onConfirm={(data: any) => {
-                                            console.log("Confirmed License Front:", data);
-                                            setMessage("License Front verified and saved successfully!");
-                                        }} 
-                                    />
-                                    <DocumentOCR 
-                                        title="License Back" 
-                                        docType="LICENSE_BACK"
-                                        onConfirm={(data: any) => {
-                                            console.log("Confirmed License Back:", data);
-                                            setMessage("License Back verified and saved successfully!");
-                                        }} 
-                                    />
-                                </div>
-                            </div>
 
-                            <div className="border-t border-gray-100 pt-8 space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-700">National ID</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <DocumentOCR 
-                                        title="NID Front" 
-                                        docType="NID_FRONT"
-                                        onConfirm={(data: any) => {
-                                            console.log("Confirmed NID Front:", data);
-                                            setMessage("NID Front verified and saved successfully!");
-                                        }} 
-                                    />
-                                    <DocumentOCR 
-                                        title="NID Back" 
-                                        docType="NID_BACK"
-                                        onConfirm={(data: any) => {
-                                            console.log("Confirmed NID Back:", data);
-                                            setMessage("NID Back verified and saved successfully!");
-                                        }} 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 

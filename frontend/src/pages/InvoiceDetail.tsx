@@ -44,64 +44,70 @@ const InvoiceDetail: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navbar />
-            <div className="flex-1 max-w-2xl mx-auto w-full py-12 px-4">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6 transition-colors font-medium">
+        <div className="min-h-screen bg-gray-50 flex flex-col print:bg-white shadow-none">
+            <div className="print:hidden">
+                <Navbar />
+            </div>
+            <div className="flex-1 max-w-2xl mx-auto w-full py-12 px-4 print:py-4 print:px-0 print:max-w-none">
+                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6 transition-colors font-medium print:hidden">
                     <ChevronLeft className="w-4 h-4" />
                     Back
                 </button>
 
-                <div className="bg-white rounded-3xl shadow-xl overflow-hidden print:shadow-none print:border">
-                    <div className="bg-gray-900 p-8 text-white flex justify-between items-end">
+                <div className="bg-white rounded-3xl shadow-xl overflow-hidden print:shadow-none print:border-none print:m-0 print:p-0">
+                    <div className="bg-gray-900 print:bg-white print:border-b-4 print:border-black print:text-black p-8 text-white flex justify-between items-end">
                         <div className="space-y-2">
-                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
-                                <span className="text-white font-bold">D</span>
+                            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4 print:bg-black">
+                                <span className="text-white font-black text-xl">D</span>
                             </div>
-                            <h1 className="text-2xl font-bold tracking-tight">Booking Invoice</h1>
-                            <p className="text-gray-400 text-sm font-mono">Invoice ID: #{booking._id?.toString().slice(-8).toUpperCase()}</p>
+                            <h1 className="text-3xl font-black tracking-tight print:text-5xl uppercase">Invoice</h1>
+                            <p className="text-gray-400 print:text-gray-600 text-sm font-mono mt-2">ID: #{booking._id?.toString().slice(-8).toUpperCase()}</p>
                         </div>
                         <div className="text-right space-y-1">
-                            <p className="text-sm font-bold text-blue-400 capitalize">{booking.status}</p>
-                            <p className="text-xs text-gray-400">{new Date(booking.createdAt).toLocaleDateString()}</p>
+                            <p className="text-sm font-black text-blue-400 print:text-gray-800 uppercase tracking-widest">{booking.status}</p>
+                            <p className="text-xs text-gray-400 print:text-gray-500 font-medium">{new Date(booking.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
 
-                    <div className="p-8 space-y-8">
+                    <div className="p-8 space-y-8 print:p-4 print:mt-4">
                         <div className="grid grid-cols-2 gap-8 text-sm">
-                            <div className="space-y-1">
-                                <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Customer Information</p>
-                                <p className="text-gray-900 font-bold">{booking.fullName || "Valued Customer"}</p>
-                                <p className="text-gray-600">Lic: {booking.licenseNumber}</p>
+                            <div className="space-y-2">
+                                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs print:text-gray-500">Billed To</p>
+                                <p className="text-gray-900 font-black text-lg">{booking.fullName || "Valued Customer"}</p>
+                                <p className="text-gray-600 font-medium">Lic/ID: {booking.licenseNumber || "Verified"}</p>
                             </div>
-                            <div className="space-y-1 text-right">
-                                <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Rental Details</p>
-                                <p className="text-gray-900 font-bold">{booking.carName}</p>
-                                <p className="text-gray-600 capitalize">{booking.rentalType} Mode</p>
+                            <div className="space-y-2 text-right">
+                                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs print:text-gray-500">Vehicle Info</p>
+                                <p className="text-gray-900 font-black text-lg">{booking.carName}</p>
+                                <p className="text-gray-600 font-medium uppercase text-xs tracking-wider">{booking.rentalType || 'Standard'} RENTAL</p>
                             </div>
                         </div>
 
-                        <div className="border-y border-gray-100 py-6 space-y-4">
-                            <div className="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+                        <div className="border border-gray-200 print:border-2 print:border-black rounded-2xl overflow-hidden">
+                            <div className="grid grid-cols-2 bg-gray-50 print:bg-gray-100 p-6 border-b border-gray-200 print:border-black">
                                 <div>
-                                    <p className="text-xs font-bold text-gray-500 uppercase">Pick-up & Drop-off</p>
-                                    <p className="text-sm text-gray-900 font-medium">{booking.startDate} — {booking.endDate}</p>
+                                    <p className="text-xs font-bold text-gray-500 print:text-gray-700 uppercase tracking-wider mb-1">Rental Period</p>
+                                    <p className="text-sm text-gray-900 font-black">{booking.startDate} to {booking.endDate}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-xs font-bold text-gray-500 uppercase">Location</p>
-                                    <p className="text-sm text-gray-900 font-medium">{booking.location}</p>
+                                    <p className="text-xs font-bold text-gray-500 print:text-gray-700 uppercase tracking-wider mb-1">Pickup Location</p>
+                                    <p className="text-sm text-gray-900 font-black">{booking.location || 'Office Location'}</p>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Rental Subtotal</span>
-                                <span className="font-bold text-gray-900">{booking.totalPrice}</span>
-                            </div>
-                            <div className="flex justify-between text-2xl font-black text-gray-900 pt-6 border-t border-gray-100">
-                                <span className="text-lg">Total Amount Paid</span>
-                                <span className="text-blue-600">{booking.totalPrice}</span>
+                            
+                            <div className="p-6 space-y-4 bg-white print:bg-white">
+                                <div className="flex justify-between text-sm font-medium">
+                                    <span className="text-gray-500 print:text-black">Base Rental Rate</span>
+                                    <span className="text-gray-900 font-bold">{booking.totalPrice}</span>
+                                </div>
+                                <div className="flex justify-between text-sm font-medium">
+                                    <span className="text-gray-500 print:text-black">Service Fees & Taxes (Included)</span>
+                                    <span className="text-gray-900 font-bold">Rs. 0</span>
+                                </div>
+                                <div className="flex justify-between items-end pt-6 border-t border-gray-100 print:border-black">
+                                    <span className="text-gray-800 uppercase tracking-tight text-sm font-bold">Total Paid Amount</span>
+                                    <span className="text-blue-600 print:text-black font-black text-3xl">{booking.totalPrice}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -129,7 +135,9 @@ const InvoiceDetail: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <Footer />
+            <div className="print:hidden">
+                <Footer />
+            </div>
         </div>
     );
 };

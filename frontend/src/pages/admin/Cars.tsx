@@ -122,8 +122,13 @@ const Cars: React.FC = () => {
                             <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-md text-xs font-bold shadow-sm">
                                 {car.rating} ★
                             </div>
-                            <div className={`absolute top-2 left-2 px-2 py-1 rounded-md text-[10px] font-bold shadow-sm ${car.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                {car.isAvailable ? 'AVAILABLE' : 'BOOKED'}
+                            <div className={`absolute top-2 left-2 flex gap-1`}>
+                                <span className={`px-2 py-1 rounded-md text-[10px] font-bold shadow-sm ${car.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {car.isAvailable ? 'AVAILABLE' : 'FULLY BOOKED'}
+                                </span>
+                                <span className="px-2 py-1 rounded-md text-[10px] font-bold shadow-sm bg-gray-800 text-white">
+                                    {(car.bookingCount || 0)}/2 Bookings
+                                </span>
                             </div>
                         </div>
                         <div className="p-4">

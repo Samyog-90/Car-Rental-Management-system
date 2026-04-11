@@ -31,6 +31,10 @@ const PaymentSuccess: React.FC = () => {
                 if (response.data.success) {
                     setBooking(response.data.booking);
                     setVerifying(false);
+                    // Automatic redirect after 10 seconds
+                    setTimeout(() => {
+                        navigate('/home');
+                    }, 10000);
                 } else {
                     setError(response.data.message || "Payment verification failed.");
                     setVerifying(false);
@@ -42,15 +46,22 @@ const PaymentSuccess: React.FC = () => {
         };
 
         verifyPayment();
-    }, [location]);
+    }, [location, navigate]);
 
     if (verifying) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-                    <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-6" />
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Verifying Payment...</h1>
-                    <p className="text-gray-600">Please wait while we confirm your transaction with eSewa.</p>
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+                <div className="bg-white p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] max-w-md w-full text-center space-y-6 animate-pulse">
+                    <div className="relative mx-auto w-16 h-16">
+                        <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-25"></div>
+                        <div className="relative w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <h1 className="text-2xl font-bold text-gray-900">Verifying Payment</h1>
+                        <p className="text-gray-500 font-medium">Securing your booking with eSewa. This won't take long...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -58,16 +69,18 @@ const PaymentSuccess: React.FC = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600">
-                        <XCircle className="w-10 h-10" />
+            <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+                <div className="bg-white p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] max-w-md w-full text-center space-y-8 animate-in fade-in zoom-in duration-500">
+                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto text-red-500 shadow-inner">
+                        <XCircle className="w-12 h-12" />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Verification Failed</h1>
-                    <p className="text-gray-600 mb-8">{error}</p>
+                    <div className="space-y-2">
+                        <h1 className="text-2xl font-bold text-gray-900">Verification Failed</h1>
+                        <p className="text-gray-500">{error}</p>
+                    </div>
                     <button
                         onClick={() => navigate('/home')}
-                        className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors"
+                        className="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-red-600 transition-all duration-300 shadow-lg transform hover:-translate-y-1 active:scale-95"
                     >
                         Return to Home
                     </button>
@@ -77,66 +90,83 @@ const PaymentSuccess: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 sm:p-8">
-            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-2xl w-full text-center space-y-8">
-                <div className="space-y-4">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto text-green-600 shadow-sm">
-                        <CheckCircle className="w-10 h-10" />
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col items-center justify-center p-4 sm:p-8">
+            <div className="bg-white p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] max-w-2xl w-full text-center space-y-10 border border-white/20 backdrop-blur-sm animate-in fade-in zoom-in duration-700">
+                <div className="space-y-6">
+                    <div className="relative mx-auto w-24 h-24">
+                        <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-25"></div>
+                        <div className="relative w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-200">
+                            <CheckCircle className="w-14 h-14" />
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Payment Successful!</h1>
-                    <p className="text-gray-600 max-w-md mx-auto">
-                        Your booking has been confirmed and trip details are ready.
-                    </p>
+                    
+                    <div className="space-y-2">
+                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Payment Complete</h1>
+                        <p className="text-lg text-gray-500 font-medium">
+                            Your adventure begins now. Your booking is officially secured.
+                        </p>
+                        {!verifying && !error && (
+                            <p className="text-xs text-blue-500 font-bold animate-pulse">
+                                You will be automatically redirected to the home page in 10 seconds.
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 {/* Invoice Section */}
                 {booking && (
-                    <div className="w-full bg-white border-2 border-gray-100 rounded-2xl shadow-sm overflow-hidden text-left animate-in slide-in-from-bottom-4 duration-500">
-                        <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
-                            <h3 className="font-bold text-gray-800 uppercase tracking-widest text-xs">Booking Invoice</h3>
-                            <span className="text-xs text-gray-500 font-mono">#{booking._id?.toString().slice(-8).toUpperCase()}</span>
+                    <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-8 text-left space-y-6 group hover:bg-white transition-all duration-500 hover:shadow-xl hover:shadow-gray-200/50">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Booking Invoice</h3>
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold">PAID</span>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div className="flex justify-between border-b pb-2">
-                                <span className="text-gray-500 text-sm">Vehicle:</span>
-                                <span className="font-bold text-gray-900">{booking.carName}</span>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Vehicle</p>
+                                <p className="text-lg font-bold text-gray-900">{booking.carName}</p>
                             </div>
-                            <div className="flex justify-between border-b pb-2">
-                                <span className="text-gray-500 text-sm">Pick-up:</span>
-                                <span className="font-medium text-gray-900">{booking.location}</span>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Reference ID</p>
+                                <p className="text-sm font-mono font-medium text-gray-600">#{booking._id?.toString().slice(-12).toUpperCase()}</p>
                             </div>
-                            <div className="flex justify-between border-b pb-2">
-                                <span className="text-gray-500 text-sm">Trip Duration:</span>
-                                <span className="font-medium text-gray-900 capitalize">{booking.startDate} to {booking.endDate}</span>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Duration</p>
+                                <p className="text-sm font-bold text-gray-800">{booking.startDate} → {booking.endDate}</p>
                             </div>
-                            <div className="flex justify-between border-b pb-2">
-                                <span className="text-gray-500 text-sm">Rental Mode:</span>
-                                <span className="font-medium text-gray-900 capitalize">{booking.rentalType} Mode</span>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pick-up Location</p>
+                                <p className="text-sm font-bold text-gray-800">{booking.location}</p>
                             </div>
-                            <div className="flex justify-between text-xl font-black text-blue-600 pt-4">
-                                <span className="text-gray-700 font-bold">Total Amount Paid</span>
-                                <span>Rs. {booking.totalPrice}</span>
+                        </div>
+
+                        <div className="pt-6 border-t border-dashed border-gray-200 flex justify-between items-end">
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-[10px] text-green-600 font-black uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full w-fit">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Secured via eSewa
+                                </div>
                             </div>
-                            <div className="pt-4 flex items-center gap-2 text-[10px] text-green-600 font-black uppercase tracking-widest">
-                                <CheckCircle className="w-4 h-4" />
-                                Secured via eSewa
+                            <div className="text-right">
+                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Paid</p>
+                                <p className="text-3xl font-black text-blue-600 tracking-tight">Rs. {booking.totalPrice}</p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <div className="flex flex-col sm:flex-row gap-4 pt-6">
                     <button
                         onClick={() => window.print()}
-                        className="flex-1 py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-4 border-2 border-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
                     >
-                        Print Invoice
+                        Print Receipt
                     </button>
                     <button
                         onClick={() => navigate('/home')}
-                        className="flex-2 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-lg transform hover:-translate-y-1"
+                        className="flex-[1.5] py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-blue-600 transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.15)] hover:shadow-blue-200 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
                     >
-                        Return to Home
+                        Go back to Home Page
                     </button>
                 </div>
             </div>

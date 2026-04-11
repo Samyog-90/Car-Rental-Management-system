@@ -83,23 +83,56 @@ exports.getDashboardStats = async (req, res) => {
 
     const activeBookings = bookings.filter(b => b.status === "Pending" || b.status === "Approved").length;
 
-    // Calculate revenue from Completed/Approved bookings
     let totalRevenue = 0;
+    
+    // Generate Chart Data (Last 7 days)
+    const chartDataMap = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      chartDataMap[dateStr] = 0;
+    }
+
     bookings.forEach(b => {
-      // Extract numeric value from string like "Rs. 2000" if necessary, or assume it's stored clean
-      // Based on previous code, price might be string.
+      // Calculate Revenue
       if (b.totalPrice) {
         const priceStr = String(b.totalPrice).replace(/[^0-9.]/g, '');
         const price = parseFloat(priceStr);
-        if (!isNaN(price)) totalRevenue += price;
+        if (!isNaN(price)) {
+            totalRevenue += price;
+
+            if (b.createdAt) {
+                const bDateStr = new Date(b.createdAt).toISOString().split('T')[0];
+                if (chartDataMap[bDateStr] !== undefined) {
+                    chartDataMap[bDateStr] += price;
+                }
+            }
+        }
       }
     });
+
+    const chartData = Object.keys(chartDataMap).map(date => ({
+      name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
+      revenue: chartDataMap[date]
+    }));
+
+    // Generate Recent Activity
+    const recentActivity = bookings
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 5)
+      .map(b => ({
+        message: `New booking for ${b.carName || 'Vehicle'}`,
+        time: b.createdAt
+      }));
 
     res.json({
       totalCars,
       totalUsers,
       activeBookings,
-      totalRevenue: `Rs. ${totalRevenue.toLocaleString()}`
+      totalRevenue: `Rs. ${totalRevenue.toLocaleString()}`,
+      chartData,
+      recentActivity
     });
 
   } catch (error) {

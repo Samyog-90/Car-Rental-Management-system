@@ -42,26 +42,7 @@ exports.verifyEsewaPay = async (req, res) => {
 
         const { status, total_amount, transaction_uuid, product_code, signature } = paymentInfo;
 
-        // FOR TESTING: Commented out strict status and signature checks
-        /*
-        if (status !== 'COMPLETE') {
-            return res.status(400).json({ success: false, message: "Payment not completed" });
-        }
-        */
-
-        // Verify Signature (Commented out for testing)
-        /*
-        const secretKey = process.env.ESEWA_SECRET_KEY || '8gBm/:&EnhH.1/q';
-        const signatureString = `transaction_code=${paymentInfo.transaction_code},status=${status},total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code},signed_field_names=${paymentInfo.signed_field_names}`;
-        
-        const expectedSignature = crypto.createHmac('sha256', secretKey)
-            .update(signatureString)
-            .digest('base64');
-
-        if (signature !== expectedSignature) {
-            return res.status(400).json({ success: false, message: "Invalid signature" });
-        }
-        */
+      
 
         console.log(`[TEST MODE] Bypassing verification for booking ${transaction_uuid}. Status was: ${status}`);
 
@@ -76,10 +57,20 @@ exports.verifyEsewaPay = async (req, res) => {
         const booking = await Booking.collection().findOne({ _id: new ObjectId(bookingId) });
         if (booking && booking.carId) {
             const Car = require('../models/Car');
-            await Car.collection().updateOne(
-                { _id: new ObjectId(booking.carId) },
-                { $set: { isAvailable: false } }
-            );
+            const car = await Car.collection().findOne({ _id: new ObjectId(booking.carId) });
+            if (car) {
+                const currentCount = (car.bookingCount || 0) + 1;
+                const outOfStock = currentCount >= 2;
+                await Car.collection().updateOne(
+                    { _id: new ObjectId(booking.carId) },
+                    { 
+                        $set: { 
+                            bookingCount: currentCount,
+                            isAvailable: !outOfStock
+                        } 
+                    }
+                );
+            }
         }
 
         console.log(`[ESEWA PAYMENT] Transaction ${paymentInfo.transaction_code} successful for booking ${bookingId}`);
