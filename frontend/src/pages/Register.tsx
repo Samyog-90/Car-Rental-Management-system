@@ -6,9 +6,12 @@ const DriveFlowSignUp: React.FC = () => {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [successMessage, setSuccessMessage] = useState('');
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -21,6 +24,10 @@ const DriveFlowSignUp: React.FC = () => {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Email is invalid';
+    }
+
+    if (!contactNumber.trim()) {
+      newErrors.contactNumber = 'Contact number is required';
     }
 
     if (!password) {
@@ -53,12 +60,15 @@ const DriveFlowSignUp: React.FC = () => {
         const response = await axios.post('http://localhost:5000/api/users/register', {
           fullName,
           email,
+          contactNumber,
           password
         });
 
         if (response.status === 201 || response.status === 200) {
-          alert('Account created successfully! Please login.');
-          navigate('/');
+          setSuccessMessage('Account created successfully! Redirecting to login...');
+          setTimeout(() => {
+            navigate('/');
+          }, 3000);
         }
       } catch (err: any) {
         setErrors({ ...errors, api: err.response?.data?.message || 'Registration failed' });
@@ -99,6 +109,14 @@ const DriveFlowSignUp: React.FC = () => {
 
           {/* Sign Up Form */}
           <div className="space-y-6">
+            {successMessage && (
+              <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-xl shadow-sm animate-bounce flex items-center gap-3">
+                <div className="bg-green-500 text-white rounded-full p-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <span className="font-bold">{successMessage}</span>
+              </div>
+            )}
             {errors.api && (
               <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
                 {errors.api}
@@ -144,6 +162,24 @@ const DriveFlowSignUp: React.FC = () => {
                   Forgot?
                 </button>
               </div>
+            </div>
+
+            {/* Contact Number */}
+            <div>
+              <label htmlFor="contactNumber" className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                Contact Number
+              </label>
+              <input
+                type="text"
+                id="contactNumber"
+                value={contactNumber}
+                onChange={(e) => setContactNumber(e.target.value)}
+                className="w-full px-4 py-4 bg-gray-200 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. +977 98XXXXXXXX"
+              />
+              {errors.contactNumber && (
+                <p className="mt-1 text-sm text-red-600">{errors.contactNumber}</p>
+              )}
             </div>
 
             {/* Password Fields */}

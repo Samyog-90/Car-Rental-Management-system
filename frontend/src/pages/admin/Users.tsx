@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Trash2, Search, Mail, User, Shield } from 'lucide-react';
+import { Trash2, Search, Mail, User, Shield, Phone } from 'lucide-react';
 
 const Users: React.FC = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -85,8 +85,11 @@ const Users: React.FC = () => {
                                             </div>
                                             <div>
                                                 <p className="font-semibold text-gray-900">{user.fullName || user.name || 'N/A'}</p>
-                                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                    <Mail size={12} /> {user.email}
+                                                <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                                                    <span className="flex items-center gap-1"><Mail size={12} /> {user.email}</span>
+                                                    {user.contactNumber && (
+                                                        <span className="flex items-center gap-1"><Phone size={12} /> {user.contactNumber}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

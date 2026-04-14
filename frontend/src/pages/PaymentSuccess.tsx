@@ -11,6 +11,7 @@ const PaymentSuccess: React.FC = () => {
     const hasVerified = useRef(false);
 
     const [booking, setBooking] = useState<any>(null);
+    const [countdown, setCountdown] = useState(4);
 
     useEffect(() => {
         const verifyPayment = async () => {
@@ -31,10 +32,18 @@ const PaymentSuccess: React.FC = () => {
                 if (response.data.success) {
                     setBooking(response.data.booking);
                     setVerifying(false);
-                    // Automatic redirect after 10 seconds
-                    setTimeout(() => {
-                        navigate('/home');
-                    }, 10000);
+                    
+                    // 4-second countdown logic
+                    const timer = setInterval(() => {
+                        setCountdown((prev) => {
+                            if (prev <= 1) {
+                                clearInterval(timer);
+                                navigate('/home');
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+
                 } else {
                     setError(response.data.message || "Payment verification failed.");
                     setVerifying(false);
@@ -59,8 +68,8 @@ const PaymentSuccess: React.FC = () => {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-2xl font-bold text-gray-900">Verifying Payment</h1>
-                        <p className="text-gray-500 font-medium">Securing your booking with eSewa. This won't take long...</p>
+                        <h1 className="text-2xl font-black text-gray-900">VERIFYING...</h1>
+                        <p className="text-gray-500 font-medium">Securing your rental records. Please wait.</p>
                     </div>
                 </div>
             </div>
@@ -100,16 +109,14 @@ const PaymentSuccess: React.FC = () => {
                         </div>
                     </div>
                     
-                    <div className="space-y-2">
-                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Payment Complete</h1>
+                    <div className="space-y-4">
+                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">PAYMENT SUCCESSFUL</h1>
                         <p className="text-lg text-gray-500 font-medium">
                             Your adventure begins now. Your booking is officially secured.
                         </p>
-                        {!verifying && !error && (
-                            <p className="text-xs text-blue-500 font-bold animate-pulse">
-                                You will be automatically redirected to the home page in 10 seconds.
-                            </p>
-                        )}
+                        <div className="inline-flex items-center gap-2 px-6 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black tracking-widest uppercase animate-pulse">
+                            Redirecting in {countdown}s
+                        </div>
                     </div>
                 </div>
 
@@ -117,7 +124,7 @@ const PaymentSuccess: React.FC = () => {
                 {booking && (
                     <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-8 text-left space-y-6 group hover:bg-white transition-all duration-500 hover:shadow-xl hover:shadow-gray-200/50">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Booking Invoice</h3>
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Booking Summary</h3>
                             <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold">PAID</span>
                         </div>
                         
@@ -127,15 +134,15 @@ const PaymentSuccess: React.FC = () => {
                                 <p className="text-lg font-bold text-gray-900">{booking.carName}</p>
                             </div>
                             <div className="space-y-1">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Reference ID</p>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Doc ID</p>
                                 <p className="text-sm font-mono font-medium text-gray-600">#{booking._id?.toString().slice(-12).toUpperCase()}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Duration</p>
-                                <p className="text-sm font-bold text-gray-800">{booking.startDate} → {booking.endDate}</p>
+                                <p className="text-sm font-bold text-gray-800">{booking.startDate} to {booking.endDate}</p>
                             </div>
                             <div className="space-y-1">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pick-up Location</p>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pickup Zone</p>
                                 <p className="text-sm font-bold text-gray-800">{booking.location}</p>
                             </div>
                         </div>
@@ -160,7 +167,7 @@ const PaymentSuccess: React.FC = () => {
                         onClick={() => window.print()}
                         className="flex-1 py-4 border-2 border-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
                     >
-                        Print Receipt
+                        Save Receipt
                     </button>
                     <button
                         onClick={() => navigate('/home')}

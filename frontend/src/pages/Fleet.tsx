@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Star, Users, Fuel, Settings, CheckCircle, Search } from 'lucide-react';
+import { Star, Users, Fuel, Settings, CheckCircle, Search, Info, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -19,6 +19,8 @@ const FleetPage: React.FC = () => {
 
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [selectedCarForDetails, setSelectedCarForDetails] = useState<any | null>(null);
 
     useEffect(() => {
         const fetchCars = async () => {
@@ -55,6 +57,12 @@ const FleetPage: React.FC = () => {
     }, [vehicles, state?.recommendation, searchTerm]);
 
     const handleBookNow = (car: any) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setShowAuthModal(true);
+            return;
+        }
+
         navigate('/booking', { 
             state: { 
                 car,
@@ -183,13 +191,19 @@ const FleetPage: React.FC = () => {
                                 <button
                                     onClick={() => handleBookNow(vehicle)}
                                     disabled={!vehicle.isAvailable}
-                                    className={`w-full py-2.5 sm:py-3 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all ${
-                                        vehicle.isAvailable 
-                                        ? 'bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg' 
-                                        : 'bg-gray-400 cursor-not-allowed'
-                                    }`}
+                                    className={`w-full py-2.5 sm:py-3 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all mb-2 ${vehicle.isAvailable
+                                            ? 'bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg'
+                                            : 'bg-gray-400 cursor-not-allowed'
+                                        }`}
                                 >
                                     {vehicle.isAvailable ? 'Book Now' : 'Currently Unavailable'}
+                                </button>
+                                <button
+                                    onClick={() => setSelectedCarForDetails(vehicle)}
+                                    className="w-full py-2.5 text-gray-600 text-sm font-semibold rounded-lg border border-gray-200 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Info className="w-4 h-4" />
+                                    View Full Details
                                 </button>
                             </div>
                         </div>
@@ -199,6 +213,158 @@ const FleetPage: React.FC = () => {
 
 
             <Footer />
+
+            {/* Auth Modal */}
+            {showAuthModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAuthModal(false)}></div>
+                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in duration-300">
+                        <div className="h-24 bg-linear-to-r from-blue-600 to-purple-600 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                                <Users className="w-8 h-8 text-white" />
+                            </div>
+                        </div>
+                        <div className="p-8 text-center">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Required</h2>
+                            <p className="text-gray-500 mb-8 text-sm leading-relaxed">Please register or log in to your account to book this premium vehicle.</p>
+                            
+                            <div className="space-y-3">
+                                <button 
+                                    onClick={() => navigate('/')}
+                                    className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+                                >
+                                    Go to Login
+                                </button>
+                                <button 
+                                    onClick={() => navigate('/register')}
+                                    className="w-full py-3 bg-white text-gray-900 font-bold rounded-xl border-2 border-gray-100 hover:bg-gray-50 transition-colors"
+                                >
+                                    Create New Account
+                                </button>
+                                <button 
+                                    onClick={() => setShowAuthModal(false)}
+                                    className="w-full py-2 text-gray-400 text-xs font-medium hover:text-gray-600 transition-colors pt-2"
+                                >
+                                    Close and continue browsing
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Car Details Modal */}
+            {selectedCarForDetails && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setSelectedCarForDetails(null)}></div>
+                    <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                        <button 
+                            onClick={() => setSelectedCarForDetails(null)}
+                            className="absolute top-6 right-6 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full text-gray-500 hover:text-gray-900 transition-colors shadow-sm"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex flex-col h-full max-h-[90vh] overflow-y-auto">
+                            {/* Top: Large Image Section */}
+                            <div className="w-full relative h-[300px] sm:h-[400px]">
+                                <img 
+                                    src={selectedCarForDetails.image} 
+                                    alt={selectedCarForDetails.name}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent"></div>
+                                <div className="absolute bottom-8 left-8 text-white">
+                                    <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider rounded-full mb-3 border border-white/30">
+                                        {selectedCarForDetails.type}
+                                    </div>
+                                    <h2 className="text-4xl font-black">{selectedCarForDetails.name}</h2>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                        <span className="font-bold">{selectedCarForDetails.rating}</span>
+                                        <span className="text-white/70 text-sm italic">- Premium Choice</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Bottom: Detailed Content Section */}
+                            <div className="p-8 sm:p-12 space-y-10">
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <div className="bg-blue-50/50 p-6 rounded-3xl flex flex-col items-center text-center gap-2 border border-blue-100">
+                                        <div className="p-3 bg-blue-100 rounded-2xl text-blue-600">
+                                            <Settings className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Gearbox</p>
+                                            <p className="font-black text-gray-900">{selectedCarForDetails.automatic ? 'Automatic' : 'Manual'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-purple-50/50 p-6 rounded-3xl flex flex-col items-center text-center gap-2 border border-purple-100">
+                                        <div className="p-3 bg-purple-100 rounded-2xl text-purple-600">
+                                            <Users className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Capacity</p>
+                                            <p className="font-black text-gray-900">{selectedCarForDetails.seats} Person</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-green-50/50 p-6 rounded-3xl flex flex-col items-center text-center gap-2 border border-green-100">
+                                        <div className="p-3 bg-green-100 rounded-2xl text-green-600">
+                                            <Fuel className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-green-400 uppercase tracking-widest">Energy</p>
+                                            <p className="font-black text-gray-900">{selectedCarForDetails.petrol}</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-orange-50/50 p-6 rounded-3xl flex flex-col items-center text-center gap-2 border border-orange-100">
+                                        <div className="p-3 bg-orange-100 rounded-2xl text-orange-600">
+                                            <CheckCircle className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Status</p>
+                                            <p className="font-black text-gray-900">{selectedCarForDetails.isAvailable ? 'Available' : 'Booked'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Vehicle Description</h3>
+                                    <p className="text-gray-600 text-lg leading-relaxed font-medium">
+                                        Experience sheer driving pleasure with the {selectedCarForDetails.name}. This {selectedCarForDetails.type} is meticulously maintained and features high-end comfort settings. 
+                                        {selectedCarForDetails.type === 'SUV' 
+                                            ? ' Built for rugged terrain and long family journeys without compromising on safety.' 
+                                            : ' Designed for elegant urban travel with efficient performance for your business or personal needs.'}
+                                    </p>
+                                </div>
+
+                                <div className="pt-10 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-8">
+                                    <div className="flex items-center gap-6">
+                                        <div className="text-right sm:text-left">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Daily Rate</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-5xl font-black text-gray-900">{selectedCarForDetails.price}</span>
+                                                <span className="text-gray-400 font-bold">/ day</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => {
+                                            setSelectedCarForDetails(null);
+                                            handleBookNow(selectedCarForDetails);
+                                        }}
+                                        disabled={!selectedCarForDetails.isAvailable}
+                                        className="w-full sm:w-auto px-12 py-5 bg-gray-900 text-white font-black rounded-[2rem] hover:bg-gray-800 transition-all shadow-2xl shadow-gray-200 active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                    >
+                                        {selectedCarForDetails.isAvailable ? 'CONFIRM BOOKING' : 'CURRENTLY UNAVAILABLE'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -10,6 +10,16 @@ exports.getAllBookings = async (req, res) => {
     }
 };
 
+exports.getMyBookings = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const bookings = await Booking.collection().find({ userId }).sort({ createdAt: -1 }).toArray();
+        res.json(bookings);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.createBooking = async (req, res) => {
     try {
         const bookingData = { ...req.body };

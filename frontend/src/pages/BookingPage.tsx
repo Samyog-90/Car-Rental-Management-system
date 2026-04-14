@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Calendar, MapPin, Upload, CreditCard, CheckCircle, AlertCircle, FileText, User, ChevronLeft } from 'lucide-react';
+import { Calendar, MapPin, Upload, CreditCard, CheckCircle, AlertCircle, FileText, User, ChevronLeft, Loader2 } from 'lucide-react';
 
 const BookingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -39,6 +39,7 @@ const BookingPage: React.FC = () => {
     const [nidStatus, setNidStatus] = useState<'unverified' | 'verifying' | 'valid' | 'invalid'>('unverified');
 
     const [paymentMethod] = useState<'esewa'>('esewa');
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     // Calculate Total Price (Rate * Days + Driver Fee)
     const calculateTotal = () => {
@@ -61,6 +62,12 @@ const BookingPage: React.FC = () => {
     const { totalAmount, diffDays, dailyRate, driverFeePerDay } = calculateTotal();
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/');
+            return;
+        }
+
         if (!car) {
             navigate('/fleet');
             return;
@@ -183,10 +190,27 @@ const BookingPage: React.FC = () => {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'licenseFront' | 'licenseBack' | 'nidFront' | 'nidBack') => {
         if (e.target.files && e.target.files[0]) {
-            if (field === 'licenseFront') setLicenseFront(e.target.files[0]);
-            if (field === 'licenseBack') setLicenseBack(e.target.files[0]);
-            if (field === 'nidFront') setNidFront(e.target.files[0]);
-            if (field === 'nidBack') setNidBack(e.target.files[0]);
+            const file = e.target.files[0];
+            
+            // 1. File Type Check
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                setError('Only JPG, JPEG and PNG files are allowed.');
+                return;
+            }
+
+            // 2. File Size Check (2MB = 2 * 1024 * 1024 bytes)
+            const maxSize = 2 * 1024 * 1024;
+            if (file.size > maxSize) {
+                setError('File size too large. Maximum limit is 2MB.');
+                return;
+            }
+
+            setError(null); // Clear any previous file errors
+            if (field === 'licenseFront') setLicenseFront(file);
+            if (field === 'licenseBack') setLicenseBack(file);
+            if (field === 'nidFront') setNidFront(file);
+            if (field === 'nidBack') setNidBack(file);
         }
     };
 
@@ -285,45 +309,55 @@ const BookingPage: React.FC = () => {
                 try {
                     const result = await handleSubmit(true);
                     if (result && result.bookingId) {
-                        // Get eSewa Config
-                        const configRes = await axios.post('http://localhost:5000/api/payment/esewa-config', {
-                            amount: result.totalPrice,
-                            transactionUuid: result.bookingId
-                        });
+                        setIsRedirecting(true);
+                        setStep(6);
+                        
+                        setTimeout(() => {
+                            // Get eSewa Config
+                            axios.post('http://localhost:5000/api/payment/esewa-config', {
+                                amount: result.totalPrice,
+                                transactionUuid: result.bookingId
+                            }).then(configRes => {
+                                const { signature, productCode, totalAmount, transactionUuid, successUrl, failureUrl } = configRes.data;
 
-                        const { signature, productCode, totalAmount, transactionUuid, successUrl, failureUrl } = configRes.data;
+                                // Create and submit form
+                                const form = document.createElement("form");
+                                form.setAttribute("method", "POST");
+                                form.setAttribute("action", "https://rc-epay.esewa.com.np/api/epay/main/v2/form");
+                                form.setAttribute("target", "_self");
 
-                        // Create and submit form
-                        const form = document.createElement("form");
-                        form.setAttribute("method", "POST");
-                        form.setAttribute("action", "https://rc-epay.esewa.com.np/api/epay/main/v2/form");
-                        form.setAttribute("target", "_self");
+                                const params = {
+                                    amount: totalAmount,
+                                    tax_amount: 0,
+                                    total_amount: totalAmount,
+                                    transaction_uuid: transactionUuid,
+                                    product_code: productCode,
+                                    product_service_charge: 0,
+                                    product_delivery_charge: 0,
+                                    success_url: successUrl,
+                                    failure_url: failureUrl,
+                                    signed_field_names: "total_amount,transaction_uuid,product_code",
+                                    signature: signature
+                                };
 
-                        const params = {
-                            amount: totalAmount,
-                            tax_amount: 0,
-                            total_amount: totalAmount,
-                            transaction_uuid: transactionUuid,
-                            product_code: productCode,
-                            product_service_charge: 0,
-                            product_delivery_charge: 0,
-                            success_url: successUrl,
-                            failure_url: failureUrl,
-                            signed_field_names: "total_amount,transaction_uuid,product_code",
-                            signature: signature
-                        };
+                                for (const key in params) {
+                                    const hiddenField = document.createElement("input");
+                                    hiddenField.setAttribute("type", "hidden");
+                                    hiddenField.setAttribute("name", key);
+                                    // @ts-ignore
+                                    hiddenField.setAttribute("value", params[key]);
+                                    form.appendChild(hiddenField);
+                                }
 
-                        for (const key in params) {
-                            const hiddenField = document.createElement("input");
-                            hiddenField.setAttribute("type", "hidden");
-                            hiddenField.setAttribute("name", key);
-                            // @ts-ignore
-                            hiddenField.setAttribute("value", params[key]);
-                            form.appendChild(hiddenField);
-                        }
-
-                        document.body.appendChild(form);
-                        form.submit();
+                                document.body.appendChild(form);
+                                form.submit();
+                            }).catch(err => {
+                                console.error(err);
+                                setError("Failed to fetch eSewa config");
+                                setIsRedirecting(false);
+                                setStep(5);
+                            });
+                        }, 4000);
                     }
                 } catch (e: any) {
                     console.error(e);
@@ -819,69 +853,65 @@ const BookingPage: React.FC = () => {
 
                         {step === 6 && (
                                 <div className="h-full flex flex-col items-center animate-in zoom-in duration-500 py-6">
-                                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 shadow-sm">
-                                        <CheckCircle className="w-10 h-10" />
+                                    <div className={`w-20 h-20 ${isRedirecting ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'} rounded-full flex items-center justify-center mb-6 shadow-sm`}>
+                                        {isRedirecting ? <Loader2 className="w-10 h-10 animate-spin" /> : <CheckCircle className="w-10 h-10" />}
                                     </div>
-                                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
-                                    <p className="text-gray-600 mb-8">Your trip has been successfully scheduled.</p>
+                                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                                        {isRedirecting ? "Processing Payment..." : "Booking Confirmed!"}
+                                    </h2>
+                                    <p className="text-gray-600 mb-8">
+                                        {isRedirecting ? "Securely connecting to eSewa. Please do not close this window." : "Your trip has been successfully scheduled."}
+                                    </p>
 
-                                    {/* Invoice Section */}
-                                    <div className="w-full max-w-lg bg-white border-2 border-gray-100 rounded-2xl shadow-sm overflow-hidden text-left">
+                                    {/* Invoice Section - Only show if not redirecting or show as preview */}
+                                    <div className="w-full max-w-lg bg-white border-2 border-gray-100 rounded-2xl shadow-sm overflow-hidden text-left opacity-90">
                                         <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
-                                            <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">Payment Invoice</h3>
-                                            <span className="text-xs text-gray-500 font-mono">#{Math.random().toString(36).substring(7).toUpperCase()}</span>
+                                            <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">Booking Preview</h3>
+                                            <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{isRedirecting ? 'INITIALIZING' : 'CONFIRMED'}</span>
                                         </div>
-                                        <div className="p-6 space-y-4">
+                                        <div className="p-6 space-y-4 font-medium">
                                             <div className="flex justify-between border-b pb-2">
                                                 <span className="text-gray-500 text-sm">Vehicle:</span>
                                                 <span className="font-bold text-gray-900">{car.name}</span>
                                             </div>
                                             <div className="flex justify-between border-b pb-2">
                                                 <span className="text-gray-500 text-sm">Duration:</span>
-                                                <span className="font-medium text-gray-900">{diffDays} Days ({startDate} - {endDate})</span>
+                                                <span className="font-bold text-gray-900">{diffDays} Days</span>
                                             </div>
                                             <div className="flex justify-between border-b pb-2">
-                                                <span className="text-gray-500 text-sm">Service:</span>
-                                                <span className="font-medium text-gray-900 capitalize">{rentalType.replace('-', ' ')} Mode</span>
+                                                <span className="text-gray-500 text-sm">Gateway:</span>
+                                                <span className="font-bold text-green-600 flex items-center gap-1">eSewa Nepal</span>
                                             </div>
-                                            <div className="space-y-2 pt-2">
-                                                <div className="flex justify-between text-xs text-gray-500">
-                                                    <span>Rental Fee (Rs. {dailyRate} × {diffDays})</span>
-                                                    <span>Rs. {dailyRate * diffDays}</span>
-                                                </div>
-                                                {rentalType === 'driver' && (
-                                                    <div className="flex justify-between text-xs text-gray-500">
-                                                        <span>Driver Fee (Rs. {driverFeePerDay} × {diffDays})</span>
-                                                        <span>Rs. {driverFeePerDay * diffDays}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex justify-between text-lg font-black text-blue-600 pt-2 border-t">
-                                                    <span>Total Paid</span>
-                                                    <span>Rs. {totalAmount}</span>
-                                                </div>
-                                            </div>
-                                            <div className="pt-4 flex items-center gap-2 text-[10px] text-green-600 font-bold uppercase">
-                                                <CheckCircle className="w-3 h-3" />
-                                                Paid via eSewa
+                                            <div className="flex justify-between text-lg font-black text-blue-600 pt-2 border-t">
+                                                <span>Total Amount</span>
+                                                <span>Rs. {totalAmount}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-8 flex gap-4">
-                                        <button
-                                            onClick={() => window.print()}
-                                            className="px-6 py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
-                                        >
-                                            <FileText className="w-4 h-4" />
-                                            Print Invoice
-                                        </button>
-                                        <button
-                                            onClick={() => navigate('/home')}
-                                            className="px-10 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-lg transform hover:-translate-y-1"
-                                        >
-                                            Done
-                                        </button>
-                                    </div>
+                                    {!isRedirecting && (
+                                        <div className="mt-8 flex gap-4">
+                                            <button
+                                                onClick={() => window.print()}
+                                                className="px-6 py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
+                                            >
+                                                <FileText className="w-4 h-4" />
+                                                Print Invoice
+                                            </button>
+                                            <button
+                                                onClick={() => navigate('/home')}
+                                                className="px-10 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-lg transform hover:-translate-y-1"
+                                            >
+                                                Done
+                                            </button>
+                                        </div>
+                                    )}
+                                    {isRedirecting && (
+                                        <div className="mt-8 flex items-center gap-3 text-sm text-gray-400 font-bold bg-gray-50 px-6 py-3 rounded-xl border border-gray-100">
+                                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                            Redirecting in 4 seconds...
+                                        </div>
+                                    )}
                                 </div>
                             )}
                     </div>

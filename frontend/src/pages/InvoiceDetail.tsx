@@ -116,20 +116,47 @@ const InvoiceDetail: React.FC = () => {
                                 <CheckCircle className="w-4 h-4" />
                                 Payment Confirmed via eSewa
                             </div>
-                            <div className="flex gap-4 w-full print:hidden">
-                                <button
-                                    onClick={() => window.print()}
-                                    className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                                >
-                                    <Printer className="w-4 h-4" />
-                                    Print Invoice
-                                </button>
-                                <button
-                                    onClick={() => navigate('/home')}
-                                    className="flex-1 py-3 border-2 border-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-50 transition-all"
-                                >
-                                    Done
-                                </button>
+                            <div className="flex flex-col gap-4 w-full print:hidden">
+                                {booking.status === 'Approved' ? (
+                                    <div className="flex gap-4 w-full">
+                                        <button
+                                            onClick={() => window.print()}
+                                            className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                                        >
+                                            <Printer className="w-4 h-4" />
+                                            Print Official Invoice
+                                        </button>
+                                        <button
+                                            onClick={() => navigate('/home')}
+                                            className="flex-1 py-3 border-2 border-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-50 transition-all"
+                                        >
+                                            Done
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="w-full space-y-4">
+                                        <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-3">
+                                            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                            <p className="text-orange-800 text-xs font-bold uppercase tracking-wider">
+                                                Approval Pending: Printing will be available once the admin confirms your booking.
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => navigate('/profile')}
+                                            className="w-full py-3 bg-gray-100 text-gray-500 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-2"
+                                            disabled
+                                        >
+                                            <Printer className="w-4 h-4 opacity-50" />
+                                            Print Disabled (Pending Approval)
+                                        </button>
+                                        <button
+                                            onClick={() => navigate('/home')}
+                                            className="w-full py-3 border-2 border-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-50 transition-all"
+                                        >
+                                            Return to Dashboard
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

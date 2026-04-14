@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const { getAllBookings, createBooking, updateBookingStatus } = require("../controllers/bookingController");
+const { getAllBookings, createBooking, updateBookingStatus, getMyBookings } = require("../controllers/bookingController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 const upload = require("../middlewares/uploadMiddleware");
 
-// Public or User route
+// Public or User routes
+router.get("/my", authMiddleware, getMyBookings);
 router.post("/", authMiddleware, upload.fields([
     { name: 'licenseFront', maxCount: 1 },
     { name: 'licenseBack', maxCount: 1 },

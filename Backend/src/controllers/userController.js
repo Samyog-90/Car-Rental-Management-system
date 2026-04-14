@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
 
 exports.register = async (req, res) => {
-    const { fullName, email, password } = req.body;
+    const { fullName, email, password, contactNumber } = req.body;
 
     try {
         const existingUser = await User.collection().findOne({ email });
@@ -18,6 +18,7 @@ exports.register = async (req, res) => {
         const result = await User.collection().insertOne({
             fullName,
             email,
+            contactNumber: contactNumber || "",
             password: hashedPassword,
             createdAt: new Date(),
             role: 'user'
@@ -59,6 +60,7 @@ exports.login = async (req, res) => {
                 id: user._id,
                 fullName: user.fullName,
                 email: user.email,
+                contactNumber: user.contactNumber || "",
                 role: user.role
             }
         });
@@ -83,10 +85,10 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { fullName, email } = req.body;
+        const { fullName, email, contactNumber } = req.body;
         const result = await User.collection().updateOne(
             { _id: new ObjectId(req.user.id) },
-            { $set: { fullName, email } }
+            { $set: { fullName, email, contactNumber } }
         );
         res.json({ message: "Profile updated successfully" });
     } catch (error) {
