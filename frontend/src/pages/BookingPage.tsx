@@ -22,6 +22,7 @@ const BookingPage: React.FC = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [location, setLocation] = useState('');
+    const [destination, setDestination] = useState('');
     const [rentalType, setRentalType] = useState<'self' | 'driver'>('self');
 
     // License
@@ -79,6 +80,7 @@ const BookingPage: React.FC = () => {
             if (prefilled.startDate) setStartDate(prefilled.startDate);
             if (prefilled.endDate) setEndDate(prefilled.endDate);
             if (prefilled.location) setLocation(prefilled.location);
+            if (prefilled.destination) setDestination(prefilled.destination);
             if (prefilled.rentalType) setRentalType(prefilled.rentalType);
         }
     }, [car, navigate, locationHook.state]);
@@ -99,26 +101,34 @@ const BookingPage: React.FC = () => {
             const ocrRes = await axios.post('http://localhost:5000/api/ocr/process', ocrFormData);
             const { licenseNumber: extractedNumber, fullName: extractedName } = ocrRes.data.extractedData?.fields || {};
 
-            if (extractedNumber) {
-                const normExtracted = extractedNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                const normInput = licenseNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-                if (normExtracted !== normInput && !normExtracted.includes(normInput) && !normInput.includes(normExtracted)) {
-                    setLicenseStatus('invalid');
-                    setError(`ID Mismatch! Image contains number "${extractedNumber}" but you entered "${licenseNumber}".`);
-                    return;
-                }
+            if (!extractedNumber) {
+                setLicenseStatus('invalid');
+                setError('Could not detect a license number in the image. Please ensure the photo is clear and well-lit.');
+                return;
             }
 
-            if (extractedName && licenseName) {
-                const normExtractedName = extractedName.toLowerCase().trim();
-                const normInputName = licenseName.toLowerCase().trim();
-                // Check for significant overlap to avoid OCR noise issues
-                if (!normExtractedName.includes(normInputName) && !normInputName.includes(normExtractedName)) {
-                    setLicenseStatus('invalid');
-                    setError(`Name Mismatch! Image contains name "${extractedName}" but you entered "${licenseName}".`);
-                    return;
-                }
+            const normExtracted = extractedNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            const normInput = licenseNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+            if (normExtracted !== normInput && !normExtracted.includes(normInput) && !normInput.includes(normExtracted)) {
+                setLicenseStatus('invalid');
+                setError(`ID Mismatch! Image contains number "${extractedNumber}" but you entered "${licenseNumber}".`);
+                return;
+            }
+
+            if (!extractedName) {
+                setLicenseStatus('invalid');
+                setError('Could not detect a name in the license image. Please ensure the full name is visible.');
+                return;
+            }
+
+            const normExtractedName = extractedName.toLowerCase().trim();
+            const normInputName = licenseName.toLowerCase().trim();
+            // Check for significant overlap to avoid OCR noise issues
+            if (!normExtractedName.includes(normInputName) && !normInputName.includes(normExtractedName)) {
+                setLicenseStatus('invalid');
+                setError(`Name Mismatch! Image contains name "${extractedName}" but you entered "${licenseName}".`);
+                return;
             }
 
             // 2. Database Verification
@@ -152,25 +162,33 @@ const BookingPage: React.FC = () => {
             const ocrRes = await axios.post('http://localhost:5000/api/ocr/process', ocrFormData);
             const { nidNumber: extractedNumber, fullName: extractedName } = ocrRes.data.extractedData?.fields || {};
 
-            if (extractedNumber) {
-                const normExtracted = extractedNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                const normInput = nidNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-                if (normExtracted !== normInput && !normExtracted.includes(normInput) && !normInput.includes(normExtracted)) {
-                    setNidStatus('invalid');
-                    setError(`NID Mismatch! Image contains number "${extractedNumber}" but you entered "${nidNumber}".`);
-                    return;
-                }
+            if (!extractedNumber) {
+                setNidStatus('invalid');
+                setError('Could not detect a National ID number in the image. Please ensure the photo is clear and well-lit.');
+                return;
             }
 
-            if (extractedName && nidName) {
-                const normExtractedName = extractedName.toLowerCase().trim();
-                const normInputName = nidName.toLowerCase().trim();
-                if (!normExtractedName.includes(normInputName) && !normInputName.includes(normExtractedName)) {
-                    setNidStatus('invalid');
-                    setError(`Name Mismatch! Image contains name "${extractedName}" but you entered "${nidName}".`);
-                    return;
-                }
+            const normExtracted = extractedNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            const normInput = nidNumber.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+            if (normExtracted !== normInput && !normExtracted.includes(normInput) && !normInput.includes(normExtracted)) {
+                setNidStatus('invalid');
+                setError(`NID Mismatch! Image contains number "${extractedNumber}" but you entered "${nidNumber}".`);
+                return;
+            }
+
+            if (!extractedName) {
+                setNidStatus('invalid');
+                setError('Could not detect a name in the National ID image. Please ensure the full name is visible.');
+                return;
+            }
+
+            const normExtractedName = extractedName.toLowerCase().trim();
+            const normInputName = nidName.toLowerCase().trim();
+            if (!normExtractedName.includes(normInputName) && !normInputName.includes(normExtractedName)) {
+                setNidStatus('invalid');
+                setError(`Name Mismatch! Image contains name "${extractedName}" but you entered "${nidName}".`);
+                return;
             }
 
             // 2. Database Verification
@@ -199,17 +217,23 @@ const BookingPage: React.FC = () => {
                 return;
             }
 
-            // 2. File Size Check (2MB = 2 * 1024 * 1024 bytes)
-            const maxSize = 2 * 1024 * 1024;
+            // 2. File Size Check (10MB)
+            const maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
-                setError('File size too large. Maximum limit is 2MB.');
+                setError('File size too large. Maximum limit is 10MB.');
                 return;
             }
 
             setError(null); // Clear any previous file errors
-            if (field === 'licenseFront') setLicenseFront(file);
+            if (field === 'licenseFront') {
+                setLicenseFront(file);
+                setLicenseStatus('unverified');
+            }
             if (field === 'licenseBack') setLicenseBack(file);
-            if (field === 'nidFront') setNidFront(file);
+            if (field === 'nidFront') {
+                setNidFront(file);
+                setNidStatus('unverified');
+            }
             if (field === 'nidBack') setNidBack(file);
         }
     };
@@ -229,6 +253,7 @@ const BookingPage: React.FC = () => {
             formData.append('startDate', startDate);
             formData.append('endDate', endDate);
             formData.append('location', location);
+            formData.append('destination', destination);
             formData.append('rentalType', rentalType);
 
             if (rentalType === 'self') {
@@ -277,7 +302,7 @@ const BookingPage: React.FC = () => {
     const nextStep = async () => {
         // Validation Logic
         if (step === 1) {
-            if (!startDate || !endDate || !location) {
+            if (!startDate || !endDate || !location || !destination) {
                 setError('Please fill in all trip details.');
                 return;
             }
@@ -393,19 +418,19 @@ const BookingPage: React.FC = () => {
             <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden">
 
                 {/* Header */}
-                <div className="bg-gray-900 px-8 py-6 flex justify-between items-center text-white">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/fleet')} className="text-gray-400 hover:text-white transition-colors">
+                <div className="bg-gray-900 px-6 sm:px-8 py-4 sm:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-white">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <button onClick={() => navigate('/fleet')} className="text-gray-400 hover:text-white transition-colors p-1 -ml-1">
                             <ChevronLeft className="w-6 h-6" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold">Book {car.name}</h1>
-                            <p className="text-gray-400 text-sm">{car.type} • {car.price}</p>
+                            <h1 className="text-xl sm:text-2xl font-bold truncate max-w-[200px] sm:max-w-none">{car.name}</h1>
+                            <p className="text-gray-400 text-xs sm:text-sm">{car.type} • {car.price}</p>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <p className="text-sm uppercase tracking-wider text-gray-400">Step {step} of 6</p>
-                        <p className="font-semibold text-blue-400">
+                    <div className="text-left sm:text-right w-full sm:w-auto border-t border-gray-800 sm:border-0 pt-3 sm:pt-0">
+                        <p className="text-[10px] sm:text-sm uppercase tracking-wider text-gray-400">Step {step} of 6</p>
+                        <p className="font-semibold text-blue-400 text-sm sm:text-base">
                             {step === 1 && "Trip Details"}
                             {step === 2 && "License Verification"}
                             {step === 3 && "Identity Verification"}
@@ -474,6 +499,19 @@ const BookingPage: React.FC = () => {
                                         />
                                     </div>
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Destination</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-purple-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Enter destination address"
+                                            value={destination}
+                                            onChange={(e) => setDestination(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                </div>
 
                                 <div className="pt-8 border-t border-gray-100 space-y-4">
                                     <label className="block text-sm font-bold text-gray-700 uppercase tracking-widest">Choose Service Type</label>
@@ -522,7 +560,10 @@ const BookingPage: React.FC = () => {
                                             type="text"
                                             placeholder="Enter your full name"
                                             value={licenseName}
-                                            onChange={(e) => setLicenseName(e.target.value)}
+                                            onChange={(e) => {
+                                                setLicenseName(e.target.value);
+                                                setLicenseStatus('unverified');
+                                            }}
                                             className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                                         />
                                     </div>
@@ -533,7 +574,10 @@ const BookingPage: React.FC = () => {
                                                 type="text"
                                                 placeholder="LICENSE-NO-123"
                                                 value={licenseNumber}
-                                                onChange={(e) => setLicenseNumber(e.target.value)}
+                                                onChange={(e) => {
+                                                    setLicenseNumber(e.target.value);
+                                                    setLicenseStatus('unverified');
+                                                }}
                                                 className="flex-1 px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                                             />
                                             <button
@@ -623,7 +667,10 @@ const BookingPage: React.FC = () => {
                                             type="text"
                                             placeholder="Enter your full name"
                                             value={nidName}
-                                            onChange={(e) => setNidName(e.target.value)}
+                                            onChange={(e) => {
+                                                setNidName(e.target.value);
+                                                setNidStatus('unverified');
+                                            }}
                                             className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none bg-white"
                                         />
                                     </div>
@@ -634,7 +681,10 @@ const BookingPage: React.FC = () => {
                                                 type="text"
                                                 placeholder="NID-XXXX-XXXX"
                                                 value={nidNumber}
-                                                onChange={(e) => setNidNumber(e.target.value)}
+                                                onChange={(e) => {
+                                                    setNidNumber(e.target.value);
+                                                    setNidStatus('unverified');
+                                                }}
                                                 className="flex-1 px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none bg-white"
                                             />
                                             <button
@@ -724,6 +774,10 @@ const BookingPage: React.FC = () => {
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-gray-500">Pick-up:</span>
                                                 <span className="font-semibold text-gray-900">{location}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500">Destination:</span>
+                                                <span className="font-semibold text-gray-900">{destination}</span>
                                             </div>
                                             <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                                                 <div className="flex items-center gap-3">
@@ -919,10 +973,10 @@ const BookingPage: React.FC = () => {
 
                 {/* Footer Buttons */}
                 {step < 6 && (
-                    <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                    <div className="px-6 sm:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <button
                             onClick={prevStep}
-                            className="px-8 py-3 text-gray-600 font-semibold hover:text-gray-900 transition-colors flex items-center gap-2"
+                            className="order-2 sm:order-1 w-full sm:w-auto px-8 py-3 text-gray-600 font-semibold hover:text-gray-900 transition-colors flex items-center justify-center gap-2"
                         >
                             {step > 1 ? 'Back' : (
                                 <div className="flex items-center gap-2">
@@ -934,7 +988,7 @@ const BookingPage: React.FC = () => {
                         <button
                             onClick={nextStep}
                             disabled={loading}
-                            className={`px-10 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`order-1 sm:order-2 w-full sm:w-auto px-10 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                             {loading ? 'Processing...' : step === 5 ? 'Confirm & Pay' : (step === 4) ? 'Confirm Details' : 'Next Step'}
                         </button>

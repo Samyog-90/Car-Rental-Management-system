@@ -89,9 +89,17 @@ const InvoiceDetail: React.FC = () => {
                                     <p className="text-xs font-bold text-gray-500 print:text-gray-700 uppercase tracking-wider mb-1">Rental Period</p>
                                     <p className="text-sm text-gray-900 font-black">{booking.startDate} to {booking.endDate}</p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-bold text-gray-500 print:text-gray-700 uppercase tracking-wider mb-1">Pickup Location</p>
-                                    <p className="text-sm text-gray-900 font-black">{booking.location || 'Office Location'}</p>
+                                <div className="text-right space-y-4">
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-500 print:text-gray-700 uppercase tracking-wider mb-1">Pickup Location</p>
+                                        <p className="text-sm text-gray-900 font-black">{booking.location || 'Office Location'}</p>
+                                    </div>
+                                    {booking.destination && (
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-500 print:text-gray-700 uppercase tracking-wider mb-1">Destination</p>
+                                            <p className="text-sm text-gray-900 font-black">{booking.destination}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             

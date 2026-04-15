@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Bell } from 'lucide-react';
+import { User, Bell, Menu, X } from 'lucide-react';
 import axios from 'axios';
 
 const Navbar: React.FC = () => {
@@ -11,6 +11,7 @@ const Navbar: React.FC = () => {
     
     const [notifications, setNotifications] = useState<any[]>([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -47,64 +48,74 @@ const Navbar: React.FC = () => {
     const handleNavigation = (path: string) => {
         navigate(path);
         setShowNotifications(false);
+        setIsMenuOpen(false);
     };
 
     const getLinkClass = (path: string) => {
+        const baseClass = "transition-all duration-200 font-medium px-4 py-2 rounded-lg";
         return location.pathname === path
-            ? "text-blue-600 font-bold transition-colors"
-            : "text-gray-600 hover:text-blue-600 transition-colors font-medium";
+            ? `${baseClass} text-blue-600 bg-blue-50 font-bold`
+            : `${baseClass} text-gray-600 hover:text-blue-600 hover:bg-gray-50`;
     };
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <nav className="bg-white shadow-md sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 lg:gap-8">
-                        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => handleNavigation('/home')}>
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-lg sm:text-xl font-bold">D</span>
+        <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                <div className="flex items-center justify-between h-20">
+                    {/* Logo & Desktop Nav */}
+                    <div className="flex items-center gap-8">
+                        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => handleNavigation('/home')}>
+                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center transform group-hover:rotate-6 transition-transform shadow-lg shadow-blue-200">
+                                <span className="text-white text-xl font-bold">D</span>
                             </div>
-                            <div>
-                                <span className="text-lg sm:text-xl font-bold text-gray-900">DriveFlow</span>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide hidden sm:block">Premium Mobility</p>
+                            <div className="flex flex-col">
+                                <span className="text-xl font-bold text-gray-900 leading-tight">DriveFlow</span>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold leading-none hidden sm:block">Premium Mobility</p>
                             </div>
                         </div>
-                        <div className="hidden lg:flex gap-6">
+
+                        {/* Desktop Links */}
+                        <div className="hidden lg:flex items-center gap-2">
                             <button onClick={() => handleNavigation('/home')} className={getLinkClass('/home')}>Home</button>
-                            <button onClick={() => handleNavigation('/fleet')} className={getLinkClass('/fleet')}>Our Fleet</button>
-                            <button onClick={() => handleNavigation('/how-it-works')} className={getLinkClass('/how-it-works')}>How It Works</button>
+                            <button onClick={() => handleNavigation('/fleet')} className={getLinkClass('/fleet')}>Fleet</button>
+                            <button onClick={() => handleNavigation('/how-it-works')} className={getLinkClass('/how-it-works')}>Process</button>
                             <button onClick={() => handleNavigation('/about')} className={getLinkClass('/about')}>About</button>
-                            <button onClick={() => handleNavigation('/contact')} className={getLinkClass('/contact')}>Contact us</button>
+                            <button onClick={() => handleNavigation('/contact')} className={getLinkClass('/contact')}>Contact</button>
                         </div>
                     </div>
-                    <div className="flex gap-2 items-center relative">
+
+                    {/* Right Side Actions */}
+                    <div className="flex items-center gap-2 sm:gap-4">
                         {isLoggedIn && (
                             <div className="relative">
                                 <button 
                                     onClick={() => setShowNotifications(!showNotifications)}
-                                    className="p-2 text-gray-600 hover:text-blue-600 transition-colors relative"
+                                    className="p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all relative"
                                 >
                                     <Bell className="w-6 h-6" />
                                     {unreadCount > 0 && (
-                                        <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white">
+                                        <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full ring-4 ring-white">
                                             {unreadCount}
                                         </span>
                                     )}
                                 </button>
 
                                 {showNotifications && (
-                                    <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+                                    <div className="absolute right-0 mt-4 w-[calc(100vw-2rem)] sm:w-96 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                        <div className="p-4 border-b bg-gray-50/50 flex justify-between items-center">
                                             <h3 className="font-bold text-gray-900">Notifications</h3>
-                                            <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded-full">{unreadCount} New</span>
+                                            <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{unreadCount} New</span>
                                         </div>
-                                        <div className="max-h-96 overflow-y-auto">
+                                        <div className="max-h-[70vh] overflow-y-auto">
                                             {notifications.length === 0 ? (
-                                                <div className="p-8 text-center text-gray-400">
-                                                    <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                                                    <p className="text-sm">No notifications yet</p>
+                                                <div className="p-12 text-center">
+                                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <Bell className="w-8 h-8 text-gray-300" />
+                                                    </div>
+                                                    <p className="text-sm text-gray-500 font-medium">Clear as a summer sky!</p>
+                                                    <p className="text-xs text-gray-400 mt-1">No notifications right now.</p>
                                                 </div>
                                             ) : (
                                                 notifications.map((notif) => (
@@ -114,13 +125,13 @@ const Navbar: React.FC = () => {
                                                             markAsRead(notif._id);
                                                             if (notif.bookingId) navigate(`/invoice/${notif.bookingId}`);
                                                         }}
-                                                        className={`p-4 border-b last:border-0 cursor-pointer transition-colors ${notif.read ? 'bg-white' : 'bg-blue-50/50 hover:bg-blue-50'}`}
+                                                        className={`p-4 border-b last:border-0 cursor-pointer transition-colors ${notif.read ? 'bg-white hover:bg-gray-50' : 'bg-blue-50/30 hover:bg-blue-50'}`}
                                                     >
-                                                        <div className="flex gap-3">
-                                                            <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${notif.read ? 'bg-transparent' : 'bg-blue-600'}`}></div>
-                                                            <div>
-                                                                <p className={`text-sm ${notif.read ? 'text-gray-600' : 'text-gray-900 font-medium'}`}>{notif.message}</p>
-                                                                <p className="text-[10px] text-gray-400 mt-1">{new Date(notif.createdAt).toLocaleString()}</p>
+                                                        <div className="flex gap-4">
+                                                            <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${notif.read ? 'bg-gray-200' : 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.4)] animate-pulse'}`}></div>
+                                                            <div className="flex-1">
+                                                                <p className={`text-sm leading-relaxed ${notif.read ? 'text-gray-600' : 'text-gray-900 font-semibold'}`}>{notif.message}</p>
+                                                                <p className="text-xs text-gray-400 mt-1 font-medium">{new Date(notif.createdAt).toLocaleDateString()} · {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -134,8 +145,8 @@ const Navbar: React.FC = () => {
                         
                         {(isLoggedIn || isAdminLoggedIn) ? (
                             <div className="flex items-center gap-3">
-                                <div className="hidden sm:flex flex-col items-end">
-                                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">
+                                <div className="hidden md:flex flex-col items-end">
+                                    <p className="text-sm font-bold text-gray-900 truncate max-w-[150px]">
                                         {(() => {
                                             if (isLoggedIn) {
                                                 const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -146,27 +157,59 @@ const Navbar: React.FC = () => {
                                             }
                                         })()}
                                     </p>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">
-                                        {isLoggedIn ? 'Client Profile' : 'System Admin'}
-                                    </p>
+                                    <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest px-1.5 py-0.5 bg-blue-50 rounded">
+                                        {isLoggedIn ? 'Client' : 'Admin'}
+                                    </span>
                                 </div>
                                 <button
                                     onClick={() => handleNavigation('/profile')}
-                                    className="p-2 sm:p-2.5 bg-gray-900 text-white rounded-full hover:bg-blue-600 transition-all shadow-md group border-2 border-transparent hover:border-blue-100"
+                                    className="p-1 border-2 border-transparent hover:border-blue-100 rounded-full transition-all"
                                 >
-                                    <User className="w-5 h-5" />
+                                    <div className="w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg group-hover:bg-blue-600 transition-colors">
+                                        <User className="w-5 h-5" />
+                                    </div>
                                 </button>
                             </div>
                         ) : (
                             <button
                                 onClick={() => handleNavigation('/')}
-                                className="px-4 py-2 sm:px-6 bg-gray-900 text-white border-2 border-gray-900 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors text-sm sm:text-base"
+                                className="px-5 py-2.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-blue-600 transition-all shadow-lg shadow-gray-200 hover:shadow-blue-200 text-sm"
                             >
                                 Sign In
                             </button>
                         )}
+
+                        {/* Mobile Menu Toggle */}
+                        <button 
+                            className="lg:hidden p-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        >
+                            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        </button>
                     </div>
                 </div>
+
+                {/* Mobile Menu Content */}
+                {isMenuOpen && (
+                    <div className="lg:hidden border-t border-gray-100 py-4 pb-6 space-y-1 animate-in slide-in-from-top-4 duration-300">
+                        <button onClick={() => handleNavigation('/home')} className={`w-full text-left ${getLinkClass('/home')}`}>Home</button>
+                        <button onClick={() => handleNavigation('/fleet')} className={`w-full text-left ${getLinkClass('/fleet')}`}>Our Fleet</button>
+                        <button onClick={() => handleNavigation('/how-it-works')} className={`w-full text-left ${getLinkClass('/how-it-works')}`}>How It Works</button>
+                        <button onClick={() => handleNavigation('/about')} className={`w-full text-left ${getLinkClass('/about')}`}>About Us</button>
+                        <button onClick={() => handleNavigation('/contact')} className={`w-full text-left ${getLinkClass('/contact')}`}>Contact Us</button>
+                        
+                        {!isLoggedIn && !isAdminLoggedIn && (
+                            <div className="pt-4 border-t border-gray-100 mt-4 px-4">
+                                <button 
+                                    onClick={() => handleNavigation('/')}
+                                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-100"
+                                >
+                                    Create Account
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </nav>
     );

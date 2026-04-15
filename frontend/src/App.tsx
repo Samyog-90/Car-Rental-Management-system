@@ -20,6 +20,7 @@ import Dashboard from './pages/admin/Dashboard';
 import Cars from './pages/admin/Cars';
 import Users from './pages/admin/Users';
 import Bookings from './pages/admin/Bookings';
+import Messages from './pages/admin/Messages';
 
 const App: React.FC = () => {
   return (
@@ -44,6 +45,7 @@ const App: React.FC = () => {
         <Route path="cars" element={<Cars />} />
         <Route path="bookings" element={<Bookings />} />
         <Route path="users" element={<Users />} />
+        <Route path="messages" element={<Messages />} />
       </Route>
     </Routes>
   );

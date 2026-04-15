@@ -11,16 +11,37 @@ const Contact: React.FC = () => {
         message: ''
     });
 
+    const [loading, setLoading] = useState(false);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle form submission logic here
-        console.log('Form submitted:', formData);
-        alert('Thank you for contacting us! We will get back to you shortly.');
-        setFormData({ name: '', email: '', subject: '', message: '' });
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:5000/api/messages/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                alert('Thank you for contacting us! We will get back to you shortly.');
+                setFormData({ name: '', email: '', subject: '', message: '' });
+            } else {
+                const data = await response.json();
+                alert(data.message || 'Failed to send message.');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Something went wrong. Please try again later.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -154,9 +175,10 @@ const Contact: React.FC = () => {
 
                                 <button
                                     type="submit"
-                                    className="w-full py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                    disabled={loading}
+                                    className={`w-full py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    Send Message
+                                    {loading ? 'Sending...' : 'Send Message'}
                                     <Send className="w-5 h-5" />
                                 </button>
                             </form>

@@ -19,6 +19,7 @@ const FleetPage: React.FC = () => {
 
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [selectedCarForDetails, setSelectedCarForDetails] = useState<any | null>(null);
 
@@ -39,10 +40,14 @@ const FleetPage: React.FC = () => {
     const displayVehicles = useMemo(() => {
         let filtered = vehicles;
         if (searchTerm) {
-            filtered = vehicles.filter(v => 
+            filtered = filtered.filter(v => 
                 v.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                 v.type.toLowerCase().includes(searchTerm.toLowerCase())
             );
+        }
+
+        if (selectedCategory !== 'All') {
+            filtered = filtered.filter(v => v.type === selectedCategory);
         }
 
         if (!state?.recommendation) return filtered;
@@ -54,7 +59,7 @@ const FleetPage: React.FC = () => {
             if (!aMatch && bMatch) return 1;
             return 0;
         });
-    }, [vehicles, state?.recommendation, searchTerm]);
+    }, [vehicles, state?.recommendation, searchTerm, selectedCategory]);
 
     const handleBookNow = (car: any) => {
         const token = localStorage.getItem('token');
@@ -75,6 +80,11 @@ const FleetPage: React.FC = () => {
             } 
         });
     };
+
+    const categories = useMemo(() => {
+        const cats = vehicles.map(v => v.type);
+        return ['All', ...Array.from(new Set(cats))];
+    }, [vehicles]);
 
     const navigate = useNavigate();
 
@@ -97,15 +107,33 @@ const FleetPage: React.FC = () => {
                         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-4">PREMIUM FLEET</h1>
                         <p className="text-gray-600 text-base sm:text-lg">Browse Our Standardized Collection Of Premium Vehicles.</p>
                     </div>
-                    <div className="w-full sm:w-auto relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                            type="text"
-                            placeholder="Search cars by name or type..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full sm:w-80 pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
-                        />
+                    <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <input
+                                type="text"
+                                placeholder="Search cars..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full sm:w-64 pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                            />
+                        </div>
+                        <div className="relative">
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="w-full sm:w-48 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer shadow-sm font-semibold text-gray-700"
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat === 'All' ? 'All Categories' : cat}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

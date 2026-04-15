@@ -22,6 +22,7 @@ async function startServer() {
     app.use("/api/bookings", require("./routes/bookingRoutes"));
     app.use("/api/payment", require("./routes/paymentRoutes"));
     app.use("/api/ocr", require("./routes/ocrRoutes"));
+    app.use("/api/messages", require("./routes/messageRoutes"));
 
 
     app.use('/uploads', express.static('uploads'));

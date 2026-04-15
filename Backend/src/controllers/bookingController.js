@@ -38,6 +38,20 @@ exports.createBooking = async (req, res) => {
         bookingData.status = "Pending";
         bookingData.createdAt = new Date();
 
+        // Check for overlapping bookings
+        const overlappingBooking = await Booking.collection().findOne({
+            carId: bookingData.carId,
+            status: { $ne: "Rejected" },
+            startDate: { $lte: bookingData.endDate },
+            endDate: { $gte: bookingData.startDate }
+        });
+
+        if (overlappingBooking) {
+            return res.status(400).json({ 
+                message: "This car is already booked for the selected dates. Please choose different dates or another car." 
+            });
+        }
+
         console.log("Creating booking with data:", bookingData);
         const result = await Booking.collection().insertOne(bookingData);
         console.log("Booking created successfully:", result.insertedId);

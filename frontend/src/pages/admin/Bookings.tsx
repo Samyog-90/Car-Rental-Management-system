@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Edit, Trash2, Plus, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 const Bookings: React.FC = () => {
     const [bookings, setBookings] = useState<any[]>([]);
@@ -97,10 +97,12 @@ const Bookings: React.FC = () => {
                                             {booking.licenseFront && <a href={`http://localhost:5000/${booking.licenseFront}`} target="_blank" className="text-xs text-blue-600 underline hover:text-blue-800 mr-2">License</a>}
                                             {booking.nidFront && <a href={`http://localhost:5000/${booking.nidFront}`} target="_blank" className="text-xs text-blue-600 underline hover:text-blue-800">NID</a>}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            <div>{booking.startDate}</div>
-                                            <div className="text-gray-400">to</div>
-                                            <div>{booking.endDate}</div>
+                                        <td className="px-6 py-4 text-xs text-gray-600">
+                                            <div className="font-bold">{booking.startDate} - {booking.endDate}</div>
+                                            <div className="mt-1 flex flex-col gap-0.5">
+                                                <span className="text-gray-400">From: <span className="text-gray-600">{booking.location}</span></span>
+                                                <span className="text-gray-400">To: <span className="text-gray-600">{booking.destination}</span></span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(booking.status)}`}>

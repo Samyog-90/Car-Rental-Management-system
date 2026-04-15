@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Car, Users } from 'lucide-react';
+import { ChevronRight, Car, Users, Search, Calendar, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
 import MapComponent from '../components/MapComponent';
@@ -36,9 +36,6 @@ const Home: React.FC = () => {
 
     const handleAnalyzeFleet = () => {
         const recommendation = roadCondition ? getRecommendedVehicle(roadCondition) : '';
-
-        console.log('Analyzing fleet...', { hireDriver, location, destination, capacity, roadCondition, recommendation });
-
         navigate('/fleet', {
             state: {
                 hireDriver,
@@ -53,237 +50,233 @@ const Home: React.FC = () => {
         });
     };
 
-    const handleSelfDrive = () => {
-        navigate('/fleet', { state: { hireDriver: 'no' } });
-    };
-
-    const handleHireDriver = () => {
-        navigate('/fleet', { state: { hireDriver: 'yes' } });
-    };
+    const handleSelfDrive = () => navigate('/fleet', { state: { hireDriver: 'no' } });
+    const handleHireDriver = () => navigate('/fleet', { state: { hireDriver: 'yes' } });
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
-            {/* Navigation */}
+        <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50">
             <Navbar />
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-6 py-12">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-16">
                 {/* Hero Section */}
-                <div className="mb-12">
-                    <div className="inline-block bg-linear-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg">
-                        Looking for a Car?
+                <div className="mb-10 lg:mb-16 text-center lg:text-left">
+                    <div className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-bold mb-6">
+                        <Car className="w-4 h-4" />
+                        <span>Premium Car Rental</span>
                     </div>
+                    <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-gray-900 mb-6 leading-[1.1]">
+                        Drive Your <span className="text-blue-600">Dream</span> Journey
+                    </h1>
+                    <p className="text-lg text-gray-500 max-w-2xl leading-relaxed">
+                        Experience the gold standard in premium mobility. From self-drive independence to chauffeur-driven luxury, find your perfect match today.
+                    </p>
                 </div>
 
                 {/* Search Box & Map Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 mb-16 lg:mb-24">
                     {/* Search Form */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-2xl p-8 border-2 border-gray-100 h-full flex flex-col justify-between">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Hire a Driver
-                                </label>
+                    <div className="lg:col-span-8 bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] p-6 lg:p-10 border border-gray-100 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
+                        
+                        <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Service Mode</label>
                                 <select
                                     value={hireDriver}
                                     onChange={(e) => setHireDriver(e.target.value)}
-                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-4 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-gray-900"
                                 >
                                     <option value="">Select option</option>
-                                    <option value="yes">Yes, with driver</option>
-                                    <option value="no">No, self drive</option>
+                                    <option value="yes">With driver</option>
+                                    <option value="no">Self drive</option>
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Capacity
-                                </label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Passengers</label>
                                 <div className="relative">
-                                    <Users className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
                                     <input
                                         type="number"
                                         value={capacity}
                                         onChange={(e) => setCapacity(e.target.value)}
-                                        placeholder="Passengers"
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="No. of people"
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-gray-900"
                                     />
                                 </div>
                             </div>
 
-                           
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Location
-                                </label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pick-up Location</label>
                                 <PlaceAutocomplete
                                     value={location}
                                     onChange={setLocation}
-                                    placeholder="Pick-up location (e.g. Kathmandu)"
+                                    placeholder="Enter city or address"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Destination
-                                </label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Destination</label>
                                 <PlaceAutocomplete
                                     value={destination}
                                     onChange={setDestination}
-                                    placeholder="Drop-off location (e.g. Pokhara)"
+                                    placeholder="Enter destination"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Start Date
-                                </label>
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    onChange={(e) => {
-                                        setStartDate(e.target.value);
-                                        if (endDate && e.target.value > endDate) setEndDate('');
-                                    }}
-                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start Date</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        onChange={(e) => {
+                                            setStartDate(e.target.value);
+                                            if (endDate && e.target.value > endDate) setEndDate('');
+                                        }}
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-gray-900"
+                                    />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    End Date
-                                </label>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    min={startDate || new Date().toISOString().split('T')[0]}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Date</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        min={startDate || new Date().toISOString().split('T')[0]}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-gray-900"
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Road Condition (Optional)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={roadCondition}
-                                    onChange={(e) => setRoadCondition(e.target.value)}
-                                    placeholder="Describe road condition (e.g. Off-Road, Highway)"
-                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">We'll recommend the best car for these conditions.</p>
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Road Condition (AI Matching)</label>
+                                <div className="relative">
+                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                                    <input
+                                        type="text"
+                                        value={roadCondition}
+                                        onChange={(e) => setRoadCondition(e.target.value)}
+                                        placeholder="e.g. Off-Road, City Center, Long Highway..."
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-gray-900"
+                                    />
+                                </div>
                             </div>
 
                             <button
                                 onClick={handleAnalyzeFleet}
-                                className="w-full px-8 py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-[0.98] flex items-center justify-center gap-3"
                             >
-                                Analyze Fleet
+                                <Search className="w-5 h-5" />
+                                ANALYZE FLEET
                             </button>
                         </div>
                     </div>
 
                     {/* Integrated Map Component */}
-                    <div className="lg:col-span-1 h-full min-h-75">
+                    <div className="lg:col-span-4 h-full min-h-[400px] lg:min-h-0 bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
                         <MapComponent location={location} destination={destination} />
                     </div>
                 </div>
 
-                {/* Experience Cards */}
-                <div className="bg-linear-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Choices of Experience</h2>
-                    <p className="text-blue-100 text-lg">
-                        Select the mode that best fits your systematic travel requirements.
-                    </p>
+                {/* Experience Banner */}
+                <div className="bg-gray-900 rounded-[32px] p-8 lg:p-12 text-white mb-10 overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[120px] -mr-48 -mt-48 opacity-20"></div>
+                    <div className="relative z-10">
+                        <h2 className="text-3xl lg:text-5xl font-black mb-4">Choose Your Experience</h2>
+                        <p className="text-gray-400 text-lg lg:max-w-xl">
+                            Select the mode that best fits your systematic travel requirements. Premium vehicles for every scenario.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 mb-24">
                     {/* Self Drive Mode */}
-                    <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-gray-100 hover:border-blue-500 transition-all hover:shadow-2xl group">
-                        <div className="mb-6">
-                            <div className="w-16 h-16 bg-linear-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                    <div className="bg-white rounded-[32px] shadow-xl p-10 border border-gray-100 hover:border-blue-500 transition-all group cursor-pointer" onClick={handleSelfDrive}>
+                        <div className="mb-8">
+                            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
                                 <Car className="w-8 h-8 text-white" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Self Drive mode</h3>
-                            <p className="text-gray-600">
-                                Take control of your journey. Choose from our premium fleet and drive at your own pace with complete freedom and flexibility.
+                            <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Self Drive</h3>
+                            <p className="text-gray-500 leading-relaxed text-lg font-medium">
+                                Take control of your journey. Choose from our premium fleet and drive at your own pace with complete freedom.
                             </p>
                         </div>
-                        <button
-                            onClick={handleSelfDrive}
-                            className="flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-700 group-hover:gap-4 transition-all"
-                        >
-                            Configure Self Drive
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-3 text-blue-600 font-black group-hover:gap-5 transition-all">
+                            <span>CONFIGURE DRIVE</span>
+                            <ChevronRight className="w-6 h-6" />
+                        </div>
                     </div>
 
                     {/* Hire a Driver */}
-                    <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-gray-100 hover:border-purple-500 transition-all hover:shadow-2xl group">
-                        <div className="mb-6">
-                            <div className="w-16 h-16 bg-linear-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
+                    <div className="bg-white rounded-[32px] shadow-xl p-10 border border-gray-100 hover:border-purple-500 transition-all group cursor-pointer" onClick={handleHireDriver}>
+                        <div className="mb-8">
+                            <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-200">
                                 <Users className="w-8 h-8 text-white" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Hire a Driver</h3>
-                            <p className="text-gray-600">
-                                Sit back and relax. Our professional chauffeurs ensure a comfortable, safe, and luxurious travel experience for you.
+                            <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Hire a Driver</h3>
+                            <p className="text-gray-500 leading-relaxed text-lg font-medium">
+                                Sit back and relax. Our professional chauffeurs ensure a comfortable, safe, and luxurious travel experience.
                             </p>
                         </div>
-                        <button
-                            onClick={handleHireDriver}
-                            className="flex items-center gap-2 text-purple-600 font-semibold hover:text-purple-700 group-hover:gap-4 transition-all"
-                        >
-                            Hire a chauffeur
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-3 text-purple-600 font-black group-hover:gap-5 transition-all">
+                            <span>CHOOSE CHAUFFEUR</span>
+                            <ChevronRight className="w-6 h-6" />
+                        </div>
                     </div>
                 </div>
 
                 {/* Available Vehicles Section */}
-                <div className="mb-12">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-8">Available Vehicles</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {vehicles.map((car) => (
-                            <div key={car.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
-                                <div className="h-48 bg-linear-to-br from-gray-200 to-gray-300 overflow-hidden">
-                                    <img
-                                        src={car.image}
-                                        alt={car.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                                <div className="p-6">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-2">{car.name}</h3>
-                                    <p className="text-2xl font-bold text-blue-600 mb-4">{car.price}</p>
-                                    <button 
-                                        onClick={() => navigate('/booking', { 
-                                            state: { 
-                                                car,
-                                                prefilledData: {
-                                                    startDate,
-                                                    endDate,
-                                                    location,
-                                                    rentalType: hireDriver === 'yes' ? 'driver' : 'self'
-                                                }
-                                            } 
-                                        })}
-                                        className="w-full py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
-                                    >
-                                        Book Now
-                                    </button>
+                <div className="mb-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-3xl lg:text-4xl font-black text-gray-900">Available Vehicles</h2>
+                        <p className="text-gray-500 font-medium pt-1">Ready for immediate booking</p>
+                    </div>
+                    <button onClick={() => navigate('/fleet')} className="px-8 py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200 transition-all">
+                        View All
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {vehicles.map((car) => (
+                        <div key={car.id} className="bg-white rounded-[32px] shadow-lg overflow-hidden border border-gray-100 hover:shadow-2xl transition-all transform hover:-translate-y-2 group">
+                            <div className="h-64 overflow-hidden relative">
+                                <img
+                                    src={car.image}
+                                    alt={car.name}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                />
+                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl font-black text-blue-600 shadow-sm">
+                                    {car.price}
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                            <div className="p-8">
+                                <h3 className="text-2xl font-black text-gray-900 mb-6">{car.name}</h3>
+                                <button 
+                                    onClick={() => navigate('/booking', { 
+                                        state: { 
+                                            car,
+                                            prefilledData: { startDate, endDate, location, rentalType: hireDriver === 'yes' ? 'driver' : 'self' }
+                                        } 
+                                    })}
+                                    className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-200 transition-all"
+                                >
+                                    BOOK NOW
+                                </button>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </main>
 
-            {/* Footer */}
             <Footer />
         </div>
     );
