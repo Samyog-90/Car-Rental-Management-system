@@ -78,7 +78,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ location, destination }) =>
     }
 
     return (
-        <div className="h-96 w-full rounded-2xl overflow-hidden shadow-lg border-2 border-gray-100 z-0 relative">
+        <div className="h-full w-full rounded-2xl overflow-hidden shadow-lg border-2 border-gray-100 z-0 relative">
             <MapContainer center={center} zoom={zoom} scrollWheelZoom={false} className="h-full w-full">
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

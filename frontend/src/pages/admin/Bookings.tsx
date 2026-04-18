@@ -17,7 +17,7 @@ const Bookings: React.FC = () => {
             const response = await axios.get('http://localhost:5000/api/bookings', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setBookings(response.data);
+            setBookings(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error("Failed to fetch bookings", error);
         } finally {

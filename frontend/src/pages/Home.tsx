@@ -64,7 +64,7 @@ const Home: React.FC = () => {
                         <Car className="w-4 h-4" />
                         <span>Premium Car Rental</span>
                     </div>
-                    <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-gray-900 mb-6 leading-[1.1]">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-[1.1]">
                         Drive Your <span className="text-blue-600">Dream</span> Journey
                     </h1>
                     <p className="text-lg text-gray-500 max-w-2xl leading-relaxed">
@@ -75,7 +75,7 @@ const Home: React.FC = () => {
                 {/* Search Box & Map Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 mb-16 lg:mb-24">
                     {/* Search Form */}
-                    <div className="lg:col-span-8 bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] p-6 lg:p-10 border border-gray-100 relative overflow-hidden">
+                    <div className="lg:col-span-7 bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] p-6 lg:p-10 border border-gray-100 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
                         
                         <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
@@ -182,7 +182,7 @@ const Home: React.FC = () => {
                     </div>
 
                     {/* Integrated Map Component */}
-                    <div className="lg:col-span-4 h-full min-h-[400px] lg:min-h-0 bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
+                    <div className="lg:col-span-5 h-[500px] lg:h-full bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
                         <MapComponent location={location} destination={destination} />
                     </div>
                 </div>

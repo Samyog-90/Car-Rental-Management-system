@@ -17,7 +17,7 @@ const Messages: React.FC = () => {
             const response = await axios.get('http://localhost:5000/api/messages/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setMessages(response.data);
+            setMessages(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error("Failed to fetch messages", error);
         } finally {

@@ -17,7 +17,7 @@ const Users: React.FC = () => {
             const response = await axios.get('http://localhost:5000/api/admin/users', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setUsers(response.data);
+            setUsers(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error("Failed to fetch users", error);
         } finally {

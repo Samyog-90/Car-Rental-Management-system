@@ -30,6 +30,22 @@ const AdminLayout: React.FC = () => {
         { path: '/admin/messages', icon: Mail, label: 'User Messages' },
     ];
 
+    const getAdminData = () => {
+        try {
+            const data = localStorage.getItem('adminUser');
+            if (data && data !== 'undefined' && data !== 'null') {
+                const parsed = JSON.parse(data);
+                return parsed || {};
+            }
+            return {};
+        } catch (e) {
+            console.error("Failed to parse admin user", e);
+            return {};
+        }
+    };
+
+    const adminUser = getAdminData();
+
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* Sidebar Overlay (Mobile) */}
@@ -118,12 +134,12 @@ const AdminLayout: React.FC = () => {
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex flex-col items-end">
                             <p className="text-sm font-bold text-gray-900">
-                                {JSON.parse(localStorage.getItem('adminUser') || '{}').name || 'Admin'}
+                                {adminUser.name || 'Admin'}
                             </p>
                             <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest bg-blue-50 px-1.5 py-0.5 rounded">Superuser</span>
                         </div>
                         <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border-2 border-white shadow-sm font-bold text-gray-600">
-                            {JSON.parse(localStorage.getItem('adminUser') || '{}').name?.charAt(0) || 'A'}
+                            {adminUser.name?.charAt(0) || 'A'}
                         </div>
                     </div>
                 </header>

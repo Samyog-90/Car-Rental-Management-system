@@ -55,8 +55,8 @@ exports.adminRegister = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const result = await Admin.collection().insertOne({
-      name,
+    const result = await User.collection().insertOne({
+      fullName: name,
       email,
       password: hashedPassword,
       role: 'admin',
@@ -103,9 +103,16 @@ exports.getDashboardStats = async (req, res) => {
             totalRevenue += price;
 
             if (b.createdAt) {
-                const bDateStr = new Date(b.createdAt).toISOString().split('T')[0];
-                if (chartDataMap[bDateStr] !== undefined) {
-                    chartDataMap[bDateStr] += price;
+                try {
+                    const date = new Date(b.createdAt);
+                    if (!isNaN(date.getTime())) {
+                        const bDateStr = date.toISOString().split('T')[0];
+                        if (chartDataMap[bDateStr] !== undefined) {
+                            chartDataMap[bDateStr] += price;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error parsing booking date:", e);
                 }
             }
         }

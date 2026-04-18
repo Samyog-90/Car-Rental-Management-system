@@ -69,7 +69,7 @@ const Contact: React.FC = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-2">Call Us</h3>
                             <p className="text-gray-600 mb-4">Mon-Fri from 8am to 5pm.</p>
                             <a href="tel:+1234567890" className="text-blue-600 font-semibold hover:text-blue-700">
-                                +1 (234) 567-890
+                                +977 9813087888
                             </a>
                         </div>
 
@@ -92,7 +92,7 @@ const Contact: React.FC = () => {
                             <p className="text-gray-600 mb-4">Visit our office HQ.</p>
                             <address className="text-gray-900 not-italic font-medium">
                                 123 Premium Street<br />
-                                New York, NY 10001
+                                Kathmandu, Nepal
                             </address>
                         </div>
                     </div>
@@ -121,7 +121,7 @@ const Contact: React.FC = () => {
                                             onChange={handleChange}
                                             required
                                             className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                            placeholder="John Doe"
+                                            placeholder="Name"
                                         />
                                     </div>
                                     <div>
@@ -136,7 +136,7 @@ const Contact: React.FC = () => {
                                             onChange={handleChange}
                                             required
                                             className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                            placeholder="john@example.com"
+                                            placeholder="name@example.com"
                                         />
                                     </div>
                                 </div>

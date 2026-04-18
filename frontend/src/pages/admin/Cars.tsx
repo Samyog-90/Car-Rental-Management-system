@@ -23,7 +23,7 @@ const Cars: React.FC = () => {
     const fetchCars = async () => {
         try {
             const response = await axios.get('http://localhost:5000/api/cars');
-            setCars(response.data);
+            setCars(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error("Failed to fetch cars", error);
         } finally {
@@ -88,7 +88,9 @@ const Cars: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const filteredCars = cars.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredCars = (cars || [])
+        .filter(c => !!c)
+        .filter(c => (c?.name || "").toLowerCase().includes((searchTerm || "").toLowerCase()));
 
     return (
         <div>
@@ -115,7 +117,14 @@ const Cars: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCars.map(car => (
+                {loading ? (
+                    <div className="col-span-full p-12 text-center text-gray-500 font-medium">Loading fleet data...</div>
+                ) : filteredCars.length === 0 ? (
+                    <div className="col-span-full p-12 text-center text-gray-400 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                        No vehicles found matching your search.
+                    </div>
+                ) : (
+                    filteredCars.map(car => (
                     <div key={car._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                         <div className="h-48 bg-gray-100 relative">
                             <img src={car.image} alt={car.name} className="w-full h-full object-cover" />
@@ -159,7 +168,8 @@ const Cars: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                ))}
+                    ))
+                )}
             </div>
 
             {/* Modal */}

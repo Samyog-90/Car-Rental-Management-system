@@ -24,7 +24,12 @@ const Dashboard: React.FC = () => {
             const response = await axios.get('http://localhost:5000/api/admin/stats', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setStats(response.data);
+            const data = response.data;
+            setStats({
+                ...data,
+                chartData: Array.isArray(data.chartData) ? data.chartData : [],
+                recentActivity: Array.isArray(data.recentActivity) ? data.recentActivity : []
+            });
         } catch (error) {
             console.error("Failed to fetch dashboard stats", error);
         } finally {
@@ -33,10 +38,10 @@ const Dashboard: React.FC = () => {
     };
 
     const statCards = [
-        { label: 'Total Fleet', value: stats.totalCars, icon: Car, color: 'bg-blue-600', subtext: 'Vehicles available' },
-        { label: 'Active Bookings', value: stats.activeBookings, icon: CalendarCheck, color: 'bg-green-600', subtext: 'Currently ongoing' },
-        { label: 'Registered Users', value: stats.totalUsers, icon: Users, color: 'bg-purple-600', subtext: 'Total customer base' },
-        { label: 'Total Revenue', value: stats.totalRevenue, icon: DollarSign, color: 'bg-yellow-500', subtext: 'Lifetime earnings' },
+        { label: 'Total Fleet', value: stats.totalCars, icon: Car, color: 'blue-600', subtext: 'Vehicles available' },
+        { label: 'Active Bookings', value: stats.activeBookings, icon: CalendarCheck, color: 'green-600', subtext: 'Currently ongoing' },
+        { label: 'Registered Users', value: stats.totalUsers, icon: Users, color: 'purple-600', subtext: 'Total customer base' },
+        { label: 'Total Revenue', value: stats.totalRevenue, icon: DollarSign, color: 'yellow-500', subtext: 'Lifetime earnings' },
     ];
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading dashboard...</div>;
@@ -59,7 +64,7 @@ const Dashboard: React.FC = () => {
                 {statCards.map((stat, index) => (
                     <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
-                            <div className={`w-12 h-12 ${stat.color} rounded-xl flex items-center justify-center text-white shadow-lg shadow-${stat.color}/30`}>
+                            <div className={`w-12 h-12 bg-${stat.color} rounded-xl flex items-center justify-center text-white shadow-lg shadow-${stat.color.split('-')[0]}-600/30`}>
                                 <stat.icon size={24} />
                             </div>
                             <span className="flex items-center text-green-500 text-xs font-bold bg-green-50 px-2 py-1 rounded-full">
