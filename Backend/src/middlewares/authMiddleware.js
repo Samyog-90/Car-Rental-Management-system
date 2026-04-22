@@ -26,7 +26,7 @@ const isAdmin = (req, res, next) => {
     }
 };
 
-// Export as function for backward compatibility, with properties for new routes
+
 module.exports = verifyToken;
 module.exports.verifyToken = verifyToken;
 module.exports.isAdmin = isAdmin;

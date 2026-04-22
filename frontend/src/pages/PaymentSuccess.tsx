@@ -11,7 +11,6 @@ const PaymentSuccess: React.FC = () => {
     const hasVerified = useRef(false);
 
     const [booking, setBooking] = useState<any>(null);
-    const [countdown, setCountdown] = useState(4);
 
     useEffect(() => {
         const verifyPayment = async () => {
@@ -32,18 +31,6 @@ const PaymentSuccess: React.FC = () => {
                 if (response.data.success) {
                     setBooking(response.data.booking);
                     setVerifying(false);
-                    
-                    // 4-second countdown logic
-                    const timer = setInterval(() => {
-                        setCountdown((prev) => {
-                            if (prev <= 1) {
-                                clearInterval(timer);
-                                navigate('/home');
-                            }
-                            return prev - 1;
-                        });
-                    }, 1000);
-
                 } else {
                     setError(response.data.message || "Payment verification failed.");
                     setVerifying(false);
@@ -114,9 +101,6 @@ const PaymentSuccess: React.FC = () => {
                         <p className="text-lg text-gray-500 font-medium">
                             Your adventure begins now. Your booking is officially secured.
                         </p>
-                        <div className="inline-flex items-center gap-2 px-6 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black tracking-widest uppercase animate-pulse">
-                            Redirecting in {countdown}s
-                        </div>
                     </div>
                 </div>
 
